@@ -10,6 +10,7 @@ import {
   MUSCLE_WEEKLY_SETS_SQL,
   PERIOD_SUMMARY_SQL,
   PREV_SETS_SQL,
+  PR_HISTORY_SQL,
   TOP_EXERCISES_SQL,
   WEEKLY_KCAL_SQL,
   WEEKLY_TONNAGE_SQL,
@@ -440,6 +441,18 @@ export async function getMuscleExercises(
 export async function getBestWeight(db: SQLiteDatabase, exerciseId: string): Promise<number | null> {
   const row = await db.getFirstAsync<{ best: number | null }>(BEST_WEIGHT_SQL, exerciseId);
   return row?.best ?? null;
+}
+
+export type PrRow = {
+  started_at: string;
+  exercise_id: string;
+  exercise_name: string;
+  weight_kg: number;
+  reps: number;
+};
+
+export async function getPrHistory(db: SQLiteDatabase, limit = 20): Promise<PrRow[]> {
+  return db.getAllAsync<PrRow>(PR_HISTORY_SQL, limit);
 }
 
 // ---------- export / import ----------

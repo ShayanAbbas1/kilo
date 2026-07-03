@@ -268,6 +268,34 @@ WHERE we.exercise_id = ? AND s.completed = 1 AND s.set_type != 'warmup'
   AND w.finished_at IS NOT NULL;
 `;
 
+/**
+ * PR history feed: completed non-warmup sets in finished workouts whose weight
+ * strictly beats the best of all earlier completed non-warmup sets of that
+ * exercise (earlier = workout date, then set position). The first-ever set of
+ * an exercise has no running max to beat (NULL), so it's excluded — NULL
+ * comparisons are never true, no explicit check needed.
+ * Params: limit
+ */
+export const PR_HISTORY_SQL = `
+SELECT started_at, exercise_id, exercise_name, weight_kg, reps FROM (
+  SELECT w.started_at AS started_at, e.id AS exercise_id, e.name AS exercise_name,
+    s.weight_kg AS weight_kg, s.reps AS reps,
+    MAX(s.weight_kg) OVER (
+      PARTITION BY e.id ORDER BY w.started_at, s.position
+      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+    ) AS prev_best
+  FROM sets s
+  JOIN workout_exercises we ON we.id = s.workout_exercise_id
+  JOIN workouts w ON w.id = we.workout_id
+  JOIN exercises e ON e.id = we.exercise_id
+  WHERE s.completed = 1 AND s.set_type != 'warmup' AND w.finished_at IS NOT NULL
+    AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+)
+WHERE weight_kg > prev_best
+ORDER BY started_at DESC
+LIMIT ?;
+`;
+
 /** History list: finished workouts with set counts + tonnage. Params: limit */
 export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,

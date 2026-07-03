@@ -10,11 +10,12 @@ import { HEAT_COLORS, toBodyData } from '@/lib/body-map';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  CalorieDay, MuscleSetsRow, TopExerciseRow, WeeklyTrend, WeightRow,
-  getCalorieDays, getMuscleSets, getTopExercises, getWeeklyTrend, getWeightTrend,
+  CalorieDay, MuscleSetsRow, PrRow, TopExerciseRow, WeeklyTrend, WeightRow,
+  getCalorieDays, getMuscleSets, getPrHistory, getTopExercises, getWeeklyTrend, getWeightTrend,
 } from '@/db/queries';
+import { formatDateTime } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
-import { formatWeight, toDisplayWeight } from '@/lib/units';
+import { formatWeight, toDisplayWeight, weightLabel } from '@/lib/units';
 
 type Range = 'week' | 'month' | 'year';
 const RANGE_DAYS: Record<Range, number> = { week: 7, month: 30, year: 365 };
@@ -35,6 +36,7 @@ export default function StatsTab() {
   const [calories, setCalories] = useState<CalorieDay[]>([]);
   const [topExercises, setTopExercises] = useState<TopExerciseRow[]>([]);
   const [trend, setTrend] = useState<WeeklyTrend | null>(null);
+  const [prs, setPrs] = useState<PrRow[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -43,6 +45,7 @@ export default function StatsTab() {
       getCalorieDays(db, 14).then(setCalories);
       getTopExercises(db, 8).then(setTopExercises);
       getWeeklyTrend(db, daysAgoIso(84).slice(0, 10)).then(setTrend);
+      getPrHistory(db, 10).then(setPrs);
     }, [db, range]),
   );
 
@@ -164,6 +167,34 @@ export default function StatsTab() {
           }))}
           formatValue={(v) => String(Math.round(v))}
         />
+      </Card>
+
+      <SectionTitle>Recent PRs</SectionTitle>
+      <Card style={{ gap: 2 }}>
+        {prs.length === 0 && (
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+            Beat a previous best weight to see it here.
+          </Text>
+        )}
+        {prs.map((pr, i) => (
+          <Pressable
+            key={i}
+            onPress={() => router.push(`/exercise/${pr.exercise_id}`)}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                paddingVertical: 10, borderRadius: 8, paddingHorizontal: 6,
+              },
+              pressed && { backgroundColor: colors.backgroundSelected },
+            ]}>
+            <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>
+              🏆 {pr.exercise_name} — {weightLabel(pr.weight_kg, unit)} × {pr.reps}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              {formatDateTime(pr.started_at)}
+            </Text>
+          </Pressable>
+        ))}
       </Card>
 
       <SectionTitle>Calories — last 14 days</SectionTitle>

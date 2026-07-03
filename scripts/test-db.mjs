@@ -5,7 +5,7 @@ import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
-  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -136,5 +136,17 @@ assert.equal(db.prepare(MUSCLE_EXERCISES_SQL).all('2026-06-01', '["quadriceps"]'
 
 // --- PR detection ---
 assert.equal(db.prepare(BEST_WEIGHT_SQL).get('bench').best, 60, 'best excludes active workout (100kg) and warmups');
+
+// --- PR history feed ---
+const prs = db.prepare(PR_HISTORY_SQL).all(20);
+assert.equal(prs.length, 2, 'only the two genuine PRs — first set and a tied set are excluded');
+assert.equal(prs[0].weight_kg, 60, 'newest PR first (w2, 60kg)');
+assert.equal(prs[0].exercise_id, 'bench');
+assert.equal(prs[0].reps, 8);
+assert.equal(prs[1].weight_kg, 55, 'earlier PR (w1, 55kg) — the first-ever set (50kg) is not a PR');
+assert.ok(!prs.some((r) => r.weight_kg === 50), 'the very first working set is never a PR');
+assert.ok(!prs.some((r) => r.weight_kg === 20), 'warmups never appear');
+assert.ok(!prs.some((r) => r.weight_kg === 62.5), 'incomplete sets never appear');
+assert.ok(!prs.some((r) => r.weight_kg === 100), 'sets from an unfinished workout never appear');
 
 console.log('test-db: all assertions passed');
