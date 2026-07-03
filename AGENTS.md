@@ -2,8 +2,8 @@
 
 Free, local-first workout + body-weight + calorie tracker. Android-first via Expo, cross-platform by design. Built by a lifter who lost 40+ kg tracking all of this manually across paywalled apps — Kilo puts training, weight, and calories on one timeline, free forever.
 
-> Expo has changed significantly: read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before writing any code.
-> Pinned to SDK 56 deliberately — Expo Go on the Play Store lags behind the newest SDK; only bump the SDK when Expo Go supports it (or once we move to a development build).
+> Expo has changed significantly: read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+> SDK version must match the Expo Go build on the owner's phone (currently SDK 57, installed from https://expo.dev/go — the Play Store build lags). Verify before bumping the SDK.
 
 ## Product principles
 
