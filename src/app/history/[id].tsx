@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  Workout, WorkoutExerciseDetail, deleteWorkout, getWorkout, getWorkoutExercises,
+  Workout, WorkoutExerciseDetail, createRoutineFromWorkout, deleteWorkout,
+  getWorkout, getWorkoutExercises,
 } from '@/db/queries';
 import { durationLabel, formatDateTime } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
@@ -20,6 +21,7 @@ export default function WorkoutDetail() {
   const { unit } = useSettings();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<WorkoutExerciseDetail[]>([]);
+  const [routineName, setRoutineName] = useState<string | null>(null); // non-null = naming UI open
 
   useFocusEffect(
     useCallback(() => {
@@ -58,6 +60,36 @@ export default function WorkoutDetail() {
           {formatDateTime(workout.started_at)}
           {workout.finished_at ? ` · ${durationLabel(workout.started_at, workout.finished_at)}` : ''}
         </Text>
+      )}
+      {routineName == null ? (
+        <Button
+          title="Save as Routine"
+          kind="secondary"
+          onPress={() => setRoutineName(workout?.name ?? exercises[0]?.name ?? 'Routine')}
+        />
+      ) : (
+        <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+          <TextInput
+            style={{
+              flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+              color: colors.text, backgroundColor: colors.background,
+            }}
+            value={routineName}
+            onChangeText={setRoutineName}
+            placeholder="Routine name"
+            placeholderTextColor={colors.textSecondary}
+            autoFocus
+          />
+          <Button
+            title="Save"
+            onPress={async () => {
+              if (!routineName.trim()) return;
+              await createRoutineFromWorkout(db, id, routineName);
+              setRoutineName(null);
+              Alert.alert('Routine saved', 'Start it from the Workout tab.');
+            }}
+          />
+        </Card>
       )}
       {exercises.map((ex) => (
         <Card key={ex.id} style={{ gap: 6 }}>

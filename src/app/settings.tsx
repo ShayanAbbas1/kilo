@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 // ponytail: legacy FS API — stable string read/write; migrate to the new File class if expo drops legacy
 import * as FileSystem from 'expo-file-system/legacy';
@@ -9,7 +9,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Button, Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { exportAll, importAll } from '@/db/queries';
+import { exportAll, getSetting, importAll, setSetting } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { Unit } from '@/lib/units';
 import { todayStr } from '@/lib/dates';
@@ -19,7 +19,17 @@ export default function SettingsScreen() {
   const colors = useTheme();
   const { unit, setUnit, kcalTarget, setKcalTarget } = useSettings();
   const [targetText, setTargetText] = useState(kcalTarget ? String(kcalTarget) : '');
+  const [restText, setRestText] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    getSetting(db, 'rest_seconds').then((v) => setRestText(v ?? ''));
+  }, [db]);
+
+  const saveRest = () => {
+    const n = parseInt(restText, 10);
+    if (!isNaN(n) && n > 0) setSetting(db, 'rest_seconds', String(n));
+  };
 
   const saveTarget = () => {
     const n = parseInt(targetText, 10);
@@ -92,6 +102,19 @@ export default function SettingsScreen() {
           placeholderTextColor={colors.textSecondary}
         />
         <Button title="Save" onPress={saveTarget} />
+      </Card>
+
+      <SectionTitle>Rest timer (seconds)</SectionTitle>
+      <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+        <TextInput
+          style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+          value={restText}
+          onChangeText={setRestText}
+          keyboardType="number-pad"
+          placeholder="120"
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Button title="Save" onPress={saveRest} />
       </Card>
 
       <SectionTitle>Backup</SectionTitle>

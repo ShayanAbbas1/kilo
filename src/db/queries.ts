@@ -154,7 +154,7 @@ export async function getPrevSets(db: SQLiteDatabase, exerciseId: string): Promi
 }
 
 export async function addExerciseToWorkout(
-  db: SQLiteDatabase, workoutId: string, exerciseId: string,
+  db: SQLiteDatabase, workoutId: string, exerciseId: string, minSets = 1,
 ): Promise<string> {
   const weId = newId();
   const pos = await db.getFirstAsync<{ p: number }>(
@@ -162,9 +162,9 @@ export async function addExerciseToWorkout(
   await db.runAsync(
     'INSERT INTO workout_exercises (id, workout_id, exercise_id, position) VALUES (?, ?, ?, ?)',
     weId, workoutId, exerciseId, pos?.p ?? 1);
-  // start with as many empty sets as last session (min 1)
+  // start with as many empty sets as last session (falling back to minSets)
   const prev = await getPrevSets(db, exerciseId);
-  const n = Math.max(1, prev.length);
+  const n = Math.max(minSets, prev.length, 1);
   for (let i = 1; i <= n; i++) {
     await db.runAsync(
       'INSERT INTO sets (id, workout_exercise_id, position, set_type) VALUES (?, ?, ?, ?)',
@@ -242,6 +242,67 @@ export async function deleteWorkout(db: SQLiteDatabase, workoutId: string): Prom
 
 export async function getHistory(db: SQLiteDatabase, limit = 100): Promise<HistoryRow[]> {
   return db.getAllAsync<HistoryRow>(WORKOUT_HISTORY_SQL, limit);
+}
+
+// ---------- routines ----------
+
+export type RoutineRow = {
+  id: string;
+  name: string;
+  exercise_names: string;
+  exercise_count: number;
+};
+
+export async function listRoutines(db: SQLiteDatabase): Promise<RoutineRow[]> {
+  return db.getAllAsync<RoutineRow>(
+    `SELECT r.id, r.name,
+       GROUP_CONCAT(e.name, ', ') AS exercise_names,
+       COUNT(re.id) AS exercise_count
+     FROM routines r
+     LEFT JOIN routine_exercises re ON re.routine_id = r.id
+     LEFT JOIN exercises e ON e.id = re.exercise_id
+     GROUP BY r.id
+     ORDER BY r.position, r.name`);
+}
+
+export async function createRoutineFromWorkout(
+  db: SQLiteDatabase, workoutId: string, name: string,
+): Promise<string> {
+  const routineId = newId();
+  const exercises = await db.getAllAsync<{ exercise_id: string; position: number; n: number }>(
+    `SELECT we.exercise_id, we.position,
+       (SELECT COUNT(*) FROM sets s WHERE s.workout_exercise_id = we.id AND s.set_type != 'warmup') AS n
+     FROM workout_exercises we WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('INSERT INTO routines (id, name) VALUES (?, ?)', routineId, name.trim());
+    for (const ex of exercises) {
+      await db.runAsync(
+        `INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets)
+         VALUES (?, ?, ?, ?, ?)`,
+        newId(), routineId, ex.exercise_id, ex.position, Math.max(1, ex.n));
+    }
+  });
+  return routineId;
+}
+
+export async function deleteRoutine(db: SQLiteDatabase, routineId: string): Promise<void> {
+  await db.runAsync('DELETE FROM routine_exercises WHERE routine_id = ?', routineId);
+  await db.runAsync('DELETE FROM routines WHERE id = ?', routineId);
+}
+
+export async function startWorkoutFromRoutine(
+  db: SQLiteDatabase, routineId: string,
+): Promise<string> {
+  const routine = await db.getFirstAsync<{ name: string }>(
+    'SELECT name FROM routines WHERE id = ?', routineId);
+  const workoutId = await startWorkout(db, routine?.name);
+  const exercises = await db.getAllAsync<{ exercise_id: string; target_sets: number }>(
+    'SELECT exercise_id, target_sets FROM routine_exercises WHERE routine_id = ? ORDER BY position',
+    routineId);
+  for (const ex of exercises) {
+    await addExerciseToWorkout(db, workoutId, ex.exercise_id, ex.target_sets);
+  }
+  return workoutId;
 }
 
 // ---------- body: weight ----------

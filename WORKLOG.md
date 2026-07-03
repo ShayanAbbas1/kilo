@@ -17,13 +17,19 @@ Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md 
 
 **Tested:** `npx tsc --noEmit` clean, `expo lint` clean, `node scripts/test-db.mjs` passes, `npx expo export --platform android` bundles (3.5MB hbc). NOT yet run on a device/emulator — first on-device smoke test is the top of the next session.
 
+**Also done same session (task 5):**
+- Routines: createRoutineFromWorkout / listRoutines / startWorkoutFromRoutine / deleteRoutine in queries.ts. Save-as-Routine (inline name field) in history detail; routines list on Workout tab (tap = start, long-press = delete). Starting from a routine pre-creates target_sets sets per exercise (prev-session count wins when larger).
+- Rest timer: in-app countdown bar on the workout screen after each completed set; +15s / Skip; duration configurable in Settings ('rest_seconds', default 120). Deliberately a decrementing-seconds timer, not wall-clock (react-hooks/purity lint forbids Date.now() in render; drift irrelevant here). No background notification yet.
+
+**Phase 1 is code-complete. All checks green** (tsc, expo lint, node scripts/test-db.mjs, expo export android).
+
 **Known gaps / next:**
-1. On-device smoke test via `npm start` + Expo Go (owner's Android phone) — expect layout nits in the set-row grid
-2. Rest timer (task 5) — in-app countdown first, expo-notifications later
-3. Routines (task 5) — save-as-template + start-from-template; schema already has routines/routine_exercises
-4. Editing a finished workout (reopen: set finished_at NULL?)
-5. Protein UI on calorie entries (DB column exists)
-6. Weight-input steppers with plate-sensible increments (+2.5kg / +5lb)
+1. **On-device smoke test** via `npm start` + Expo Go (owner's Android phone) — nothing has rendered on a real screen yet; expect layout nits in the set-row grid and keyboard behavior
+2. Rest timer background notification (expo-notifications)
+3. Editing a finished workout (reopen: set finished_at NULL?)
+4. Protein UI on calorie entries (DB column exists)
+5. Weight-input steppers with plate-sensible increments (+2.5kg / +5lb)
+6. Then Phase 2: analytics (charts lib decision pending)
 
 ## 2026-07-04 — Session 1: foundation
 

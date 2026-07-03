@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -10,7 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
-  addSet, deleteSet, discardWorkout, finishWorkout, getWorkoutExercises,
+  addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkoutExercises,
   removeWorkoutExercise, updateSet,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
@@ -39,6 +39,22 @@ export default function ActiveWorkoutScreen() {
   const colors = useTheme();
   const { unit } = useSettings();
   const [exercises, setExercises] = useState<VMExercise[]>([]);
+  const [restSec, setRestSec] = useState(120);
+  // ponytail: decrementing-seconds timer, not wall-clock — drifts ~ms/tick, irrelevant for rest
+  const [restLeft, setRestLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    getSetting(db, 'rest_seconds').then((v) => {
+      const n = v ? parseInt(v, 10) : NaN;
+      if (!isNaN(n) && n > 0) setRestSec(n);
+    });
+  }, [db]);
+
+  useEffect(() => {
+    if (restLeft == null) return;
+    const t = setTimeout(() => setRestLeft((l) => (l == null || l <= 1 ? null : l - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [restLeft]);
 
   const toVM = useCallback(
     (rows: WorkoutExerciseDetail[]): VMExercise[] =>
@@ -100,6 +116,7 @@ export default function ActiveWorkoutScreen() {
       }
       patchSet(ex.weId, s.id, { completed: true, weightText, repsText });
       updateSet(db, s.id, { completed: true });
+      setRestLeft(restSec);
     } else {
       patchSet(ex.weId, s.id, { completed: false });
       updateSet(db, s.id, { completed: false });
@@ -179,6 +196,21 @@ export default function ActiveWorkoutScreen() {
           ),
         }}
       />
+      {restLeft != null && (
+        <View style={[styles.restBar, { backgroundColor: colors.backgroundElement }]}>
+          <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+            Rest {fmtCountdown(restLeft)}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+            <Pressable onPress={() => setRestLeft((l) => (l ?? 0) + 15)} hitSlop={8}>
+              <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
+            </Pressable>
+            <Pressable onPress={() => setRestLeft(null)} hitSlop={8}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
       <ScrollView
         contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three }}
         keyboardShouldPersistTaps="handled">
@@ -269,8 +301,17 @@ export default function ActiveWorkoutScreen() {
   );
 }
 
+function fmtCountdown(totalSec: number): string {
+  const s = Math.max(0, totalSec);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  restBar: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: Spacing.three,
+  },
   setRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.two,
     paddingVertical: 4,
