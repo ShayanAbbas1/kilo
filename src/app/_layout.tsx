@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { DB_NAME, migrate } from '@/db';
 import { SettingsProvider } from '@/lib/settings-context';
+import '@/lib/rest-notification'; // registers notification handler + Android channel once
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

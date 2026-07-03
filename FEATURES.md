@@ -12,7 +12,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Start empty workout → add exercises → log sets (weight × reps)
 - [x] Previous-session values shown per set (the "what did I do last time" ghost text)
 - [x] Set types: warm-up / working / failure (tap the set number to cycle)
-- [x] Rest timer — in-app countdown after each completed set, +15s/skip, duration in settings (background notification still open)
+- [x] Rest timer — in-app countdown after each completed set, +15s/skip, duration in settings, background notification when app is backgrounded/locked
 - [x] Edit/delete sets (long-press a set row to delete); delete past workouts — editing a *finished* workout still open
 - [x] Routines: save a finished workout as a routine (history detail), start from routine (Workout tab), long-press to delete
 - [x] Workout history list + detail view

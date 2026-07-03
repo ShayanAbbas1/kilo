@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -14,6 +14,7 @@ import {
   addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
   getWorkoutExercises, removeWorkoutExercise, setExerciseNotes, setWorkoutNotes, updateSet,
 } from '@/db/queries';
+import { cancelRestDone, scheduleRestDone } from '@/lib/rest-notification';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
 
@@ -72,6 +73,18 @@ export default function ActiveWorkoutScreen() {
   }, [startedAt]);
   // ponytail: decrementing-seconds timer, not wall-clock — drifts ~ms/tick, irrelevant for rest
   const [restLeft, setRestLeft] = useState<number | null>(null);
+  // background notification for when rest ends while the app is backgrounded/locked;
+  // suppressed by the foreground handler, so no extra handling needed when it fires in-app
+  const restNotifId = useRef<string | null>(null);
+  const rearmRestNotif = useCallback((seconds: number) => {
+    cancelRestDone(restNotifId.current);
+    restNotifId.current = null;
+    scheduleRestDone(seconds).then((notifId) => { restNotifId.current = notifId; });
+  }, []);
+  const clearRestNotif = useCallback(() => {
+    cancelRestDone(restNotifId.current);
+    restNotifId.current = null;
+  }, []);
 
   useEffect(() => {
     getSetting(db, 'rest_seconds').then((v) => {
@@ -171,6 +184,7 @@ export default function ActiveWorkoutScreen() {
       patchSet(ex.weId, s.id, { completed: true, weightText, repsText, pr: isPr });
       updateSet(db, s.id, { completed: true });
       setRestLeft(restSec);
+      rearmRestNotif(restSec);
       if (isPr) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
@@ -208,6 +222,7 @@ export default function ActiveWorkoutScreen() {
       {
         text: 'Finish',
         onPress: async () => {
+          clearRestNotif();
           const kept = await finishWorkout(db, id);
           if (!kept) Alert.alert('Nothing logged', 'Empty workout was discarded.');
           router.dismissTo('/(tabs)');
@@ -222,6 +237,7 @@ export default function ActiveWorkoutScreen() {
       {
         text: 'Discard', style: 'destructive',
         onPress: async () => {
+          clearRestNotif();
           await discardWorkout(db, id);
           router.dismissTo('/(tabs)');
         },
@@ -283,10 +299,12 @@ export default function ActiveWorkoutScreen() {
             Rest {fmtCountdown(restLeft)}
           </Text>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <Pressable onPress={() => setRestLeft((l) => (l ?? 0) + 15)} hitSlop={8}>
+            <Pressable
+              onPress={() => { setRestLeft((l) => (l ?? 0) + 15); rearmRestNotif((restLeft ?? 0) + 15); }}
+              hitSlop={8}>
               <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
             </Pressable>
-            <Pressable onPress={() => setRestLeft(null)} hitSlop={8}>
+            <Pressable onPress={() => { setRestLeft(null); clearRestNotif(); }} hitSlop={8}>
               <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
             </Pressable>
           </View>
