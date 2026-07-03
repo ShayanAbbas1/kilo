@@ -42,6 +42,7 @@ export type WorkoutSet = {
   reps: number | null;
   set_type: SetType;
   completed: number;
+  rpe: number | null;
 };
 
 export type WorkoutExerciseDetail = {
@@ -49,6 +50,7 @@ export type WorkoutExerciseDetail = {
   exercise_id: string;
   name: string;
   position: number;
+  notes: string | null;
   sets: WorkoutSet[];
   prev: PrevSet[];
   best_weight: number | null;
@@ -155,8 +157,10 @@ export async function getWorkout(db: SQLiteDatabase, id: string): Promise<Workou
 export async function getWorkoutExercises(
   db: SQLiteDatabase, workoutId: string,
 ): Promise<WorkoutExerciseDetail[]> {
-  const rows = await db.getAllAsync<{ id: string; exercise_id: string; name: string; position: number }>(
-    `SELECT we.id, we.exercise_id, we.position, e.name
+  const rows = await db.getAllAsync<
+    { id: string; exercise_id: string; name: string; position: number; notes: string | null }
+  >(
+    `SELECT we.id, we.exercise_id, we.position, we.notes, e.name
      FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
      WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
   const result: WorkoutExerciseDetail[] = [];
@@ -174,6 +178,12 @@ export async function setWorkoutNotes(
   db: SQLiteDatabase, workoutId: string, notes: string,
 ): Promise<void> {
   await db.runAsync('UPDATE workouts SET notes = ? WHERE id = ?', notes.trim() || null, workoutId);
+}
+
+export async function setExerciseNotes(
+  db: SQLiteDatabase, weId: string, notes: string,
+): Promise<void> {
+  await db.runAsync('UPDATE workout_exercises SET notes = ? WHERE id = ?', notes.trim() || null, weId);
 }
 
 export async function getPrevSets(db: SQLiteDatabase, exerciseId: string): Promise<PrevSet[]> {
@@ -215,12 +225,16 @@ export async function addSet(db: SQLiteDatabase, weId: string): Promise<void> {
 
 export async function updateSet(
   db: SQLiteDatabase, setId: string,
-  fields: { weight_kg?: number | null; reps?: number | null; set_type?: SetType; completed?: boolean },
+  fields: {
+    weight_kg?: number | null; reps?: number | null; set_type?: SetType; completed?: boolean;
+    rpe?: number | null;
+  },
 ): Promise<void> {
   const cols: string[] = [];
   const vals: (string | number | null)[] = [];
   if ('weight_kg' in fields) { cols.push('weight_kg = ?'); vals.push(fields.weight_kg ?? null); }
   if ('reps' in fields) { cols.push('reps = ?'); vals.push(fields.reps ?? null); }
+  if ('rpe' in fields) { cols.push('rpe = ?'); vals.push(fields.rpe ?? null); }
   if (fields.set_type) { cols.push('set_type = ?'); vals.push(fields.set_type); }
   if ('completed' in fields) {
     cols.push('completed = ?', 'completed_at = ?');

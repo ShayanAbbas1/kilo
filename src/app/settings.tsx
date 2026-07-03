@@ -17,7 +17,7 @@ import { todayStr } from '@/lib/dates';
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const colors = useTheme();
-  const { unit, setUnit, kcalTarget, setKcalTarget } = useSettings();
+  const { unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe } = useSettings();
   const [targetText, setTargetText] = useState(kcalTarget ? String(kcalTarget) : '');
   const [restText, setRestText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -87,6 +87,19 @@ export default function SettingsScreen() {
             kind={unit === u ? 'primary' : 'secondary'}
             style={{ flex: 1 }}
             onPress={() => setUnit(u)}
+          />
+        ))}
+      </Card>
+
+      <SectionTitle>RPE per set</SectionTitle>
+      <Card style={{ flexDirection: 'row', gap: Spacing.two }}>
+        {([false, true] as const).map((v) => (
+          <Button
+            key={String(v)}
+            title={v ? 'On' : 'Off'}
+            kind={showRpe === v ? 'primary' : 'secondary'}
+            style={{ flex: 1 }}
+            onPress={() => setShowRpe(v)}
           />
         ))}
       </Card>

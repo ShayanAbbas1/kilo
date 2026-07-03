@@ -129,9 +129,15 @@ export default function WorkoutDetail() {
               </Text>
               <Text style={{ color: colors.text }}>
                 {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'} × {s.reps ?? '—'}
+                {s.rpe != null ? ` @ ${s.rpe}` : ''}
               </Text>
             </View>
           ))}
+          {ex.notes ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
+              {ex.notes}
+            </Text>
+          ) : null}
         </Card>
       ))}
     </ScrollView>

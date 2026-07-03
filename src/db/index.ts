@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { SCHEMA_SQL, SCHEMA_VERSION } from './sql';
+import { MIGRATION_V2_SQL, SCHEMA_SQL, SCHEMA_VERSION } from './sql';
 import seedExercises from '../data/exercises.json';
 
 export const DB_NAME = 'kilo.db';
@@ -7,6 +7,16 @@ export const DB_NAME = 'kilo.db';
 /** Runs on every app start (SQLiteProvider onInit). Idempotent. */
 export async function migrate(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+
+  // CREATE TABLE IF NOT EXISTS never adds columns to an existing table, so read the
+  // stamped version BEFORE running SCHEMA_SQL and run ALTERs for anything older.
+  // No meta table yet = fresh install; SCHEMA_SQL below already has the new columns.
+  await db.execAsync('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);');
+  const stored = await db.getFirstAsync<{ value: string }>(
+    "SELECT value FROM meta WHERE key = 'schema_version'");
+  const oldVersion = stored ? Number(stored.value) : SCHEMA_VERSION;
+  if (oldVersion < 2) await db.execAsync(MIGRATION_V2_SQL);
+
   await db.execAsync(SCHEMA_SQL);
   await db.runAsync(
     'INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)',

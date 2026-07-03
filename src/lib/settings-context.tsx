@@ -8,6 +8,8 @@ type AppSettings = {
   setUnit: (u: Unit) => void;
   kcalTarget: number | null;
   setKcalTarget: (n: number | null) => void;
+  showRpe: boolean;
+  setShowRpe: (b: boolean) => void;
 };
 
 const Ctx = createContext<AppSettings>({
@@ -15,12 +17,15 @@ const Ctx = createContext<AppSettings>({
   setUnit: () => {},
   kcalTarget: null,
   setKcalTarget: () => {},
+  showRpe: false,
+  setShowRpe: () => {},
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const db = useSQLiteContext();
   const [unit, setUnitState] = useState<Unit>('kg');
   const [kcalTarget, setKcalTargetState] = useState<number | null>(null);
+  const [showRpe, setShowRpeState] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -28,6 +33,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (u === 'lbs' || u === 'kg') setUnitState(u);
       const t = await getSetting(db, 'kcal_target');
       if (t) setKcalTargetState(Number(t));
+      const r = await getSetting(db, 'show_rpe');
+      setShowRpeState(r === '1');
     })();
   }, [db]);
 
@@ -41,7 +48,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSetting(db, 'kcal_target', n == null ? '' : String(n));
   }, [db]);
 
-  return <Ctx.Provider value={{ unit, setUnit, kcalTarget, setKcalTarget }}>{children}</Ctx.Provider>;
+  const setShowRpe = useCallback((b: boolean) => {
+    setShowRpeState(b);
+    setSetting(db, 'show_rpe', b ? '1' : '0');
+  }, [db]);
+
+  return (
+    <Ctx.Provider value={{ unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useSettings() {

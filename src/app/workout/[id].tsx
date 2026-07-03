@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
   addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
-  getWorkoutExercises, removeWorkoutExercise, setWorkoutNotes, updateSet,
+  getWorkoutExercises, removeWorkoutExercise, setExerciseNotes, setWorkoutNotes, updateSet,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
@@ -23,6 +23,7 @@ type VMSet = {
   completed: boolean;
   weightText: string;
   repsText: string;
+  rpeText: string;
   pr?: boolean;
 };
 
@@ -30,6 +31,7 @@ type VMExercise = {
   weId: string;
   exerciseId: string;
   name: string;
+  notes: string;
   prev: PrevSet[];
   bestWeight: number | null;
   sets: VMSet[];
@@ -41,7 +43,7 @@ export default function ActiveWorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const colors = useTheme();
-  const { unit } = useSettings();
+  const { unit, showRpe } = useSettings();
   const [exercises, setExercises] = useState<VMExercise[]>([]);
   const [restSec, setRestSec] = useState(120);
   const [elapsedMin, setElapsedMin] = useState<number | null>(null);
@@ -90,6 +92,7 @@ export default function ActiveWorkoutScreen() {
         weId: r.id,
         exerciseId: r.exercise_id,
         name: r.name,
+        notes: r.notes ?? '',
         prev: r.prev,
         bestWeight: r.best_weight,
         sets: r.sets.map((s) => ({
@@ -98,6 +101,7 @@ export default function ActiveWorkoutScreen() {
           completed: !!s.completed,
           weightText: s.weight_kg == null ? '' : formatWeight(s.weight_kg, unit),
           repsText: s.reps == null ? '' : String(s.reps),
+          rpeText: s.rpe == null ? '' : String(s.rpe),
         })),
       })),
     [unit],
@@ -129,6 +133,21 @@ export default function ActiveWorkoutScreen() {
     patchSet(weId, setId, { repsText: text });
     const n = parseInt(text, 10);
     updateSet(db, setId, { reps: isNaN(n) ? null : n });
+  };
+
+  const onRpeChange = (weId: string, setId: string, text: string) => {
+    patchSet(weId, setId, { rpeText: text });
+    const n = parseFloat(text.replace(',', '.'));
+    updateSet(db, setId, { rpe: isNaN(n) ? null : Math.min(10, Math.max(0, n)) });
+  };
+
+  const patchExercise = (weId: string, patch: Partial<VMExercise>) => {
+    setExercises((prev) => prev.map((e) => (e.weId === weId ? { ...e, ...patch } : e)));
+  };
+
+  const onNotesChange = (weId: string, text: string) => {
+    patchExercise(weId, { notes: text });
+    setExerciseNotes(db, weId, text);
   };
 
   const onToggleComplete = (ex: VMExercise, s: VMSet, idx: number) => {
@@ -296,6 +315,9 @@ export default function ActiveWorkoutScreen() {
               <Text style={[styles.colPrev, styles.colHead, { color: colors.textSecondary }]}>PREVIOUS</Text>
               <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>{unit.toUpperCase()}</Text>
               <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>REPS</Text>
+              {showRpe && (
+                <Text style={[styles.colRpe, styles.colHead, { color: colors.textSecondary }]}>RPE</Text>
+              )}
               <Text style={[styles.colCheck, styles.colHead, { color: colors.textSecondary }]}>✓</Text>
             </View>
             {ex.sets.map((s, idx) => {
@@ -341,6 +363,17 @@ export default function ActiveWorkoutScreen() {
                       placeholderTextColor={colors.textSecondary}
                       selectTextOnFocus
                     />
+                    {showRpe && (
+                      <TextInput
+                        style={[styles.colRpe, styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                        value={s.rpeText}
+                        onChangeText={(t) => onRpeChange(ex.weId, s.id, t)}
+                        keyboardType="decimal-pad"
+                        placeholder="-"
+                        placeholderTextColor={colors.textSecondary}
+                        selectTextOnFocus
+                      />
+                    )}
                     <Pressable
                       style={styles.colCheck}
                       onPress={() => onToggleComplete(ex, s, idx)}
@@ -361,6 +394,17 @@ export default function ActiveWorkoutScreen() {
               kind="secondary"
               style={{ backgroundColor: colors.backgroundSelected, paddingVertical: 8 }}
               onPress={() => addSet(db, ex.weId).then(reload)}
+            />
+            <TextInput
+              style={{
+                borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, fontSize: 13, minHeight: 32,
+                color: colors.textSecondary, backgroundColor: colors.background,
+              }}
+              value={ex.notes}
+              onChangeText={(t) => onNotesChange(ex.weId, t)}
+              placeholder="Exercise notes…"
+              placeholderTextColor={colors.textSecondary}
+              multiline
             />
           </Card>
         ))}
@@ -425,6 +469,7 @@ const styles = StyleSheet.create({
   colSet: { width: 32 },
   colPrev: { flex: 1.2, fontSize: 13, textAlign: 'center' },
   colInput: { flex: 1 },
+  colRpe: { flex: 0.7 },
   colCheck: { width: 32 },
   input: {
     borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8,

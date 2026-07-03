@@ -5,7 +5,7 @@ import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
-  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -148,5 +148,47 @@ assert.ok(!prs.some((r) => r.weight_kg === 50), 'the very first working set is n
 assert.ok(!prs.some((r) => r.weight_kg === 20), 'warmups never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 62.5), 'incomplete sets never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 100), 'sets from an unfinished workout never appear');
+
+// --- migration: v1 -> v2 ALTERs applied to a v1-shaped DB match a fresh SCHEMA_SQL install ---
+const oldDb = new DatabaseSync(':memory:');
+oldDb.exec(`
+  CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  INSERT INTO meta (key, value) VALUES ('schema_version', '1');
+  CREATE TABLE workout_exercises (
+    id TEXT PRIMARY KEY,
+    workout_id TEXT NOT NULL,
+    exercise_id TEXT NOT NULL,
+    position INTEGER NOT NULL
+  );
+  CREATE TABLE sets (
+    id TEXT PRIMARY KEY,
+    workout_exercise_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    weight_kg REAL,
+    reps INTEGER,
+    set_type TEXT NOT NULL DEFAULT 'working',
+    completed INTEGER NOT NULL DEFAULT 0,
+    completed_at TEXT
+  );
+`);
+oldDb.exec(MIGRATION_V2_SQL);
+
+const freshDb = new DatabaseSync(':memory:');
+freshDb.exec(SCHEMA_SQL);
+
+const cols = (d, table) => d.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name).sort();
+assert.deepEqual(cols(oldDb, 'sets'), cols(freshDb, 'sets'),
+  'v1 sets + MIGRATION_V2_SQL matches fresh SCHEMA_SQL columns');
+assert.deepEqual(cols(oldDb, 'workout_exercises'), cols(freshDb, 'workout_exercises'),
+  'v1 workout_exercises + MIGRATION_V2_SQL matches fresh SCHEMA_SQL columns');
+// migrated table is actually usable with the new columns
+oldDb.prepare(
+  `INSERT INTO workout_exercises (id, workout_id, exercise_id, position, notes) VALUES ('we', 'w', 'bench', 1, 'note')`,
+).run();
+oldDb.prepare(
+  `INSERT INTO sets (id, workout_exercise_id, position, rpe) VALUES ('s', 'we', 1, 8.5)`,
+).run();
+assert.equal(oldDb.prepare('SELECT rpe FROM sets WHERE id = ?').get('s').rpe, 8.5);
+assert.equal(oldDb.prepare('SELECT notes FROM workout_exercises WHERE id = ?').get('we').notes, 'note');
 
 console.log('test-db: all assertions passed');

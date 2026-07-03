@@ -1,6 +1,6 @@
 // Pure SQL, no expo imports — also executed by scripts/test-db.mjs against node:sqlite.
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS meta (
@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
   id TEXT PRIMARY KEY,
   workout_id TEXT NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
   exercise_id TEXT NOT NULL REFERENCES exercises(id),
-  position INTEGER NOT NULL
+  position INTEGER NOT NULL,
+  notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sets (
@@ -42,7 +43,8 @@ CREATE TABLE IF NOT EXISTS sets (
   reps INTEGER,
   set_type TEXT NOT NULL DEFAULT 'working',
   completed INTEGER NOT NULL DEFAULT 0,
-  completed_at TEXT
+  completed_at TEXT,
+  rpe REAL
 );
 
 CREATE TABLE IF NOT EXISTS routines (
@@ -82,6 +84,12 @@ CREATE INDEX IF NOT EXISTS idx_we_exercise ON workout_exercises(exercise_id);
 CREATE INDEX IF NOT EXISTS idx_sets_we ON sets(workout_exercise_id);
 CREATE INDEX IF NOT EXISTS idx_cal_date ON calorie_entries(date);
 CREATE INDEX IF NOT EXISTS idx_workouts_started ON workouts(started_at);
+`;
+
+/** v1 -> v2: RPE per set + per-exercise notes. Applied only to installs upgrading from v1. */
+export const MIGRATION_V2_SQL = `
+ALTER TABLE sets ADD COLUMN rpe REAL;
+ALTER TABLE workout_exercises ADD COLUMN notes TEXT;
 `;
 
 /**
