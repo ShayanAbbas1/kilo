@@ -8,7 +8,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   Workout, WorkoutExerciseDetail, createRoutineFromWorkout, deleteWorkout,
-  getWorkout, getWorkoutExercises,
+  getActiveWorkout, getWorkout, getWorkoutExercises, reopenWorkout,
 } from '@/db/queries';
 import { durationLabel, formatDateTime } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
@@ -62,11 +62,28 @@ export default function WorkoutDetail() {
         </Text>
       )}
       {routineName == null ? (
-        <Button
-          title="Save as Routine"
-          kind="secondary"
-          onPress={() => setRoutineName(workout?.name ?? exercises[0]?.name ?? 'Routine')}
-        />
+        <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+          <Button
+            title="Save as Routine"
+            kind="secondary"
+            style={{ flex: 1 }}
+            onPress={() => setRoutineName(workout?.name ?? exercises[0]?.name ?? 'Routine')}
+          />
+          <Button
+            title="Edit"
+            kind="secondary"
+            style={{ flex: 1 }}
+            onPress={async () => {
+              const active = await getActiveWorkout(db);
+              if (active) {
+                Alert.alert('Workout in progress', 'Finish or discard it before editing this one.');
+                return;
+              }
+              await reopenWorkout(db, id);
+              router.replace(`/workout/${id}`);
+            }}
+          />
+        </View>
       ) : (
         <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
           <TextInput
@@ -93,7 +110,11 @@ export default function WorkoutDetail() {
       )}
       {exercises.map((ex) => (
         <Card key={ex.id} style={{ gap: 6 }}>
-          <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>{ex.name}</Text>
+          <Pressable onPress={() => router.push(`/exercise/${ex.exercise_id}`)}>
+            <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>
+              {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
+            </Text>
+          </Pressable>
           {ex.sets.map((s, idx) => (
             <View key={s.id} style={{ flexDirection: 'row', gap: Spacing.three }}>
               <Text style={{ color: colors.textSecondary, width: 24, fontWeight: '600' }}>

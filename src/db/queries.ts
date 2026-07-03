@@ -3,7 +3,11 @@ import { newId } from '../lib/id';
 import { nowIso } from '../lib/dates';
 import {
   CALORIE_DAYS_SQL,
+  EXERCISE_PROGRESSION_SQL,
+  MUSCLE_SETS_SQL,
+  PERIOD_SUMMARY_SQL,
   PREV_SETS_SQL,
+  TOP_EXERCISES_SQL,
   WEIGHT_TREND_SQL,
   WORKOUT_HISTORY_SQL,
 } from './sql';
@@ -93,8 +97,16 @@ export async function setSetting(db: SQLiteDatabase, key: string, value: string)
 
 // ---------- exercises ----------
 
-export async function searchExercises(db: SQLiteDatabase, query: string): Promise<Exercise[]> {
+export async function searchExercises(
+  db: SQLiteDatabase, query: string, muscle?: string,
+): Promise<Exercise[]> {
   const q = `%${query.trim()}%`;
+  if (muscle) {
+    return db.getAllAsync<Exercise>(
+      `SELECT * FROM exercises WHERE name LIKE ? AND primary_muscles LIKE ?
+       ORDER BY is_custom DESC, name LIMIT 100`,
+      q, `%"${muscle}"%`);
+  }
   return db.getAllAsync<Exercise>(
     `SELECT * FROM exercises WHERE name LIKE ? ORDER BY is_custom DESC, name LIMIT 100`, q);
 }
@@ -228,6 +240,11 @@ export async function finishWorkout(db: SQLiteDatabase, workoutId: string): Prom
   return true;
 }
 
+/** Reopen a finished workout for editing — it becomes the active workout again. */
+export async function reopenWorkout(db: SQLiteDatabase, workoutId: string): Promise<void> {
+  await db.runAsync('UPDATE workouts SET finished_at = NULL WHERE id = ?', workoutId);
+}
+
 export async function discardWorkout(db: SQLiteDatabase, workoutId: string): Promise<void> {
   await db.runAsync(
     `DELETE FROM sets WHERE workout_exercise_id IN
@@ -340,6 +357,32 @@ export async function getCalorieDays(db: SQLiteDatabase, limit = 60): Promise<Ca
 export async function getCalorieEntries(db: SQLiteDatabase, date: string): Promise<CalorieEntry[]> {
   return db.getAllAsync<CalorieEntry>(
     'SELECT * FROM calorie_entries WHERE date = ? ORDER BY rowid', date);
+}
+
+// ---------- analytics ----------
+
+export type ProgressionRow = { day: string; top_weight: number; est1rm: number; volume: number };
+export type MuscleSetsRow = { muscle: string; sets: number };
+export type TopExerciseRow = { id: string; name: string; sessions: number; best_weight: number | null };
+export type PeriodSummary = { workouts: number; tonnage_kg: number };
+
+export async function getExerciseProgression(
+  db: SQLiteDatabase, exerciseId: string,
+): Promise<ProgressionRow[]> {
+  return db.getAllAsync<ProgressionRow>(EXERCISE_PROGRESSION_SQL, exerciseId);
+}
+
+export async function getMuscleSets(db: SQLiteDatabase, sinceIso: string): Promise<MuscleSetsRow[]> {
+  return db.getAllAsync<MuscleSetsRow>(MUSCLE_SETS_SQL, sinceIso);
+}
+
+export async function getTopExercises(db: SQLiteDatabase, limit = 10): Promise<TopExerciseRow[]> {
+  return db.getAllAsync<TopExerciseRow>(TOP_EXERCISES_SQL, limit);
+}
+
+export async function getPeriodSummary(db: SQLiteDatabase, sinceIso: string): Promise<PeriodSummary> {
+  const row = await db.getFirstAsync<PeriodSummary>(PERIOD_SUMMARY_SQL, sinceIso);
+  return row ?? { workouts: 0, tonnage_kg: 0 };
 }
 
 // ---------- export / import ----------

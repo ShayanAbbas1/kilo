@@ -34,20 +34,25 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Import from a Kilo export (restore on new phone)
 
 ## Phase 2 — Analytics (the reason Kilo exists)
-- [ ] Per-exercise progression: top-set weight and estimated 1RM over time
-- [ ] Volume per muscle group: weekly / monthly / yearly, sets and tonnage
-- [ ] Body-weight trend chart with moving average
-- [ ] Calorie adherence vs target over time
-- [ ] **The Trendline**: body weight + calories + strength on one timeline — "is this cut/bulk working?"
-- [ ] Personal records: auto-detected PRs (weight, reps, est. 1RM, volume)
+- [x] Stats tab: weight trend chart (90d, raw + 7-day avg lines, trend delta), sets per muscle group (7d/30d/365d, json_each over primary_muscles), calories vs target columns (14d), most-trained exercises list
+- [x] Per-exercise progression screen (`/exercise/[id]`): est. 1RM (Epley) / top weight / volume line chart with metric toggle, bests row, session list, how-to instructions. Linked from Stats, workout screen (tap name), history detail.
+- [ ] **The Trendline**: body weight + calories + strength on ONE combined timeline — still the flagship idea, not built
+- [ ] Personal records: auto-detected PR feed + "new PR" flash when a set beats history (bests-per-exercise already shown on exercise page)
+- [ ] Tonnage per muscle group (sets done; tonnage variant pending)
 
 ## Phase 3 — Quality of life
+- [x] Elapsed-time in workout header, haptic on set completion
+- [x] Muscle-group filter chips in exercise picker
+- [x] Protein per calorie entry + daily protein total
+- [x] Weigh-in delta vs 7-day average (▲▼) on Body tab
+- [x] Edit a finished workout (reopen from history detail)
+- [x] Weekly summary (workouts + tonnage) on Workout tab
 - [ ] Supersets
 - [ ] Plate calculator
 - [ ] RPE/RIR per set (optional field, off by default)
 - [ ] Notes on workouts and exercises
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher)
-- [ ] Dark mode (if not free via system theme already)
+- [x] Dark mode (system theme, all components themed)
 
 ## Phase 4 — Maybe, later, or never
 - [ ] Food database / barcode scanning (only if manual kcal entry proves too much friction)

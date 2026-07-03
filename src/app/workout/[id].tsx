@@ -4,14 +4,15 @@ import {
 } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Haptics from 'expo-haptics';
 
 import { Button, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
-  addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkoutExercises,
-  removeWorkoutExercise, updateSet,
+  addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
+  getWorkoutExercises, removeWorkoutExercise, updateSet,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
@@ -26,6 +27,7 @@ type VMSet = {
 
 type VMExercise = {
   weId: string;
+  exerciseId: string;
   name: string;
   prev: PrevSet[];
   sets: VMSet[];
@@ -40,6 +42,23 @@ export default function ActiveWorkoutScreen() {
   const { unit } = useSettings();
   const [exercises, setExercises] = useState<VMExercise[]>([]);
   const [restSec, setRestSec] = useState(120);
+  const [elapsedMin, setElapsedMin] = useState<number | null>(null);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    getWorkout(db, id).then((w) => setStartedAt(w?.started_at ?? null));
+  }, [db, id]);
+
+  // minute-granularity elapsed clock in the header
+  useEffect(() => {
+    if (!startedAt) return;
+    const start = new Date(startedAt).getTime();
+    const iv = setInterval(() => {
+      const next = Math.floor((Date.now() - start) / 60000);
+      setElapsedMin(next); // same-value updates bail out, no re-render
+    }, 5000);
+    return () => clearInterval(iv);
+  }, [startedAt]);
   // ponytail: decrementing-seconds timer, not wall-clock — drifts ~ms/tick, irrelevant for rest
   const [restLeft, setRestLeft] = useState<number | null>(null);
 
@@ -60,6 +79,7 @@ export default function ActiveWorkoutScreen() {
     (rows: WorkoutExerciseDetail[]): VMExercise[] =>
       rows.map((r) => ({
         weId: r.id,
+        exerciseId: r.exercise_id,
         name: r.name,
         prev: r.prev,
         sets: r.sets.map((s) => ({
@@ -117,6 +137,7 @@ export default function ActiveWorkoutScreen() {
       patchSet(ex.weId, s.id, { completed: true, weightText, repsText });
       updateSet(db, s.id, { completed: true });
       setRestLeft(restSec);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
       patchSet(ex.weId, s.id, { completed: false });
       updateSet(db, s.id, { completed: false });
@@ -189,6 +210,7 @@ export default function ActiveWorkoutScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen
         options={{
+          title: elapsedMin != null && elapsedMin > 0 ? `Workout · ${elapsedMin}m` : 'Workout',
           headerRight: () => (
             <Pressable onPress={onFinish} hitSlop={8}>
               <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>Finish</Text>
@@ -216,8 +238,12 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled">
         {exercises.map((ex) => (
           <Card key={ex.weId} style={{ gap: Spacing.two }}>
-            <Pressable onLongPress={() => onRemoveExercise(ex)}>
-              <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>{ex.name}</Text>
+            <Pressable
+              onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
+              onLongPress={() => onRemoveExercise(ex)}>
+              <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>
+                {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
+              </Text>
             </Pressable>
             <View style={styles.headerRow}>
               <Text style={[styles.colSet, styles.colHead, { color: colors.textSecondary }]}>SET</Text>

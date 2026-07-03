@@ -127,6 +127,68 @@ ORDER BY date DESC
 LIMIT ?;
 `;
 
+/**
+ * Per-day progression for one exercise across finished workouts:
+ * top weight, best estimated 1RM (Epley), session volume.
+ * Params: exercise_id
+ */
+export const EXERCISE_PROGRESSION_SQL = `
+SELECT date(w.started_at) AS day,
+  MAX(s.weight_kg) AS top_weight,
+  MAX(s.weight_kg * (1 + s.reps / 30.0)) AS est1rm,
+  SUM(s.weight_kg * s.reps) AS volume
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+WHERE we.exercise_id = ?
+  AND s.completed = 1 AND s.set_type != 'warmup'
+  AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+  AND w.finished_at IS NOT NULL
+GROUP BY day
+ORDER BY day;
+`;
+
+/**
+ * Completed working sets per primary muscle since a date (uses json_each over
+ * the exercise's primary_muscles array). Params: since ISO date
+ */
+export const MUSCLE_SETS_SQL = `
+SELECT je.value AS muscle, COUNT(*) AS sets
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id,
+  json_each(e.primary_muscles) je
+WHERE s.completed = 1 AND s.set_type != 'warmup'
+  AND w.finished_at IS NOT NULL AND w.started_at >= ?
+GROUP BY je.value
+ORDER BY sets DESC;
+`;
+
+/** Most-trained exercises (by session count). Params: limit */
+export const TOP_EXERCISES_SQL = `
+SELECT e.id, e.name, COUNT(DISTINCT w.id) AS sessions,
+  MAX(s.weight_kg) AS best_weight
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id
+WHERE s.completed = 1 AND s.set_type != 'warmup' AND w.finished_at IS NOT NULL
+GROUP BY e.id
+ORDER BY sessions DESC, e.name
+LIMIT ?;
+`;
+
+/** Workouts + tonnage since a date (weekly summary). Params: since ISO datetime */
+export const PERIOD_SUMMARY_SQL = `
+SELECT COUNT(DISTINCT w.id) AS workouts,
+  COALESCE(SUM(CASE WHEN s.completed = 1 THEN s.weight_kg * s.reps ELSE 0 END), 0) AS tonnage_kg
+FROM workouts w
+LEFT JOIN workout_exercises we ON we.workout_id = w.id
+LEFT JOIN sets s ON s.workout_exercise_id = we.id
+WHERE w.finished_at IS NOT NULL AND w.started_at >= ?;
+`;
+
 /** History list: finished workouts with set counts + tonnage. Params: limit */
 export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,

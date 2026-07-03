@@ -24,6 +24,7 @@ export default function TabLayout() {
         ),
       }}>
       <Tabs.Screen name="index" options={{ title: 'Workout', tabBarIcon: icon('🏋️') }} />
+      <Tabs.Screen name="stats" options={{ title: 'Stats', tabBarIcon: icon('📈') }} />
       <Tabs.Screen name="history" options={{ title: 'History', tabBarIcon: icon('📅') }} />
       <Tabs.Screen name="body" options={{ title: 'Body', tabBarIcon: icon('⚖️') }} />
     </Tabs>

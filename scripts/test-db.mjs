@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
+  EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -79,5 +80,31 @@ assert.equal(calDays[1].entries, 2);
 db.prepare('INSERT OR REPLACE INTO weigh_ins (date, weight_kg) VALUES (?, ?)').run('2026-06-28', 88.8);
 assert.equal(db.prepare('SELECT weight_kg FROM weigh_ins WHERE date = ?').get('2026-06-28').weight_kg, 88.8);
 assert.equal(db.prepare('SELECT COUNT(*) n FROM weigh_ins').get().n, 5);
+
+// --- analytics: exercise progression (per-day top weight / est 1RM / volume) ---
+db.exec(`UPDATE exercises SET primary_muscles = '["chest"]' WHERE id = 'bench';`);
+const prog = db.prepare(EXERCISE_PROGRESSION_SQL).all('bench');
+assert.equal(prog.length, 2, 'two finished sessions for bench');
+assert.equal(prog[0].day, '2026-06-20');
+assert.equal(prog[0].top_weight, 55);
+assert.ok(Math.abs(prog[0].est1rm - 55 * (1 + 8 / 30)) < 1e-9, 'Epley est 1RM');
+assert.equal(prog[1].volume, 60 * 8 + 60 * 7, 'working-set volume only, warmups excluded');
+
+// --- analytics: sets per muscle via json_each (warmups excluded) ---
+const muscles = db.prepare(MUSCLE_SETS_SQL).all('2026-06-01');
+const chest = muscles.find((m) => m.muscle === 'chest');
+assert.equal(chest.sets, 4, '2 working sets in w1 + 2 in w2 (warmup excluded)');
+assert.equal(db.prepare(MUSCLE_SETS_SQL).all('2026-06-25').find((m) => m.muscle === 'chest').sets, 2);
+
+// --- analytics: top exercises ---
+const top = db.prepare(TOP_EXERCISES_SQL).all(5);
+assert.equal(top[0].id, 'bench');
+assert.equal(top[0].sessions, 2);
+assert.equal(top[0].best_weight, 60);
+
+// --- analytics: period summary ---
+const week = db.prepare(PERIOD_SUMMARY_SQL).get('2026-06-25');
+assert.equal(week.workouts, 1, 'only w2 since 06-25');
+assert.equal(week.tonnage_kg, 20 * 12 + 60 * 8 + 60 * 7);
 
 console.log('test-db: all assertions passed');

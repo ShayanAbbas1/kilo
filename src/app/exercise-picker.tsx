@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  FlatList, Pressable, StyleSheet, Text, TextInput, View,
+  FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -24,14 +24,15 @@ export default function ExercisePicker() {
   const db = useSQLiteContext();
   const colors = useTheme();
   const [query, setQuery] = useState('');
+  const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
   const [results, setResults] = useState<Exercise[]>([]);
   const [creating, setCreating] = useState(false);
   const [newMuscle, setNewMuscle] = useState(MUSCLES[0]);
   const [newEquipment, setNewEquipment] = useState(EQUIPMENT[0]);
 
   useEffect(() => {
-    searchExercises(db, query).then(setResults);
-  }, [db, query]);
+    searchExercises(db, query, muscleFilter ?? undefined).then(setResults);
+  }, [db, query, muscleFilter]);
 
   const pick = async (exerciseId: string) => {
     await addExerciseToWorkout(db, workoutId, exerciseId);
@@ -65,6 +66,22 @@ export default function ExercisePicker() {
         onChangeText={(t) => { setQuery(t); setCreating(false); }}
         autoFocus
       />
+      {!creating && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.two }}>
+          {MUSCLES.map((m) => (
+            <Chip
+              key={m}
+              label={m}
+              selected={m === muscleFilter}
+              onPress={() => setMuscleFilter(muscleFilter === m ? null : m)}
+            />
+          ))}
+        </ScrollView>
+      )}
       {creating ? (
         <View style={{ padding: Spacing.three, gap: Spacing.three }}>
           <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>

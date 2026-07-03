@@ -27,6 +27,7 @@ export default function BodyTab() {
   const [entries, setEntries] = useState<CalorieEntry[]>([]);
   const [kcalText, setKcalText] = useState('');
   const [labelText, setLabelText] = useState('');
+  const [proteinText, setProteinText] = useState('');
 
   const today = todayStr();
 
@@ -51,20 +52,34 @@ export default function BodyTab() {
   const addEntry = async () => {
     const kcal = parseInt(kcalText, 10);
     if (isNaN(kcal) || kcal <= 0) return;
-    await addCalorieEntry(db, today, kcal, labelText.trim() || undefined);
+    const protein = parseFloat(proteinText.replace(',', '.'));
+    await addCalorieEntry(
+      db, today, kcal, labelText.trim() || undefined, isNaN(protein) ? undefined : protein);
     setKcalText('');
     setLabelText('');
+    setProteinText('');
     reload();
   };
 
   const todayKcal = entries.reduce((a, e) => a + e.kcal, 0);
+  const todayProtein = entries.reduce((a, e) => a + (e.protein_g ?? 0), 0);
+
+  // vs yesterday's 7-day average: the honest daily signal
+  const todayRow = trend.find((r) => r.date === today);
+  const prevRow = trend.find((r) => r.date < today);
+  const delta = todayRow && prevRow ? todayRow.weight_kg - prevRow.avg7 : null;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}
         keyboardShouldPersistTaps="handled">
-        <SectionTitle>Today’s weigh-in</SectionTitle>
+        <SectionTitle>
+          Today’s weigh-in
+          {delta != null
+            ? `  ${delta <= 0 ? '▼' : '▲'} ${formatWeight(Math.abs(delta), unit)} ${unit} vs 7-day avg`
+            : ''}
+        </SectionTitle>
         <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
           <TextInput
             style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
@@ -77,7 +92,10 @@ export default function BodyTab() {
           <Button title="Save" onPress={saveWeight} />
         </Card>
 
-        <SectionTitle>Calories today {kcalTarget ? `· ${todayKcal} / ${kcalTarget} kcal` : `· ${todayKcal} kcal`}</SectionTitle>
+        <SectionTitle>
+          Calories today {kcalTarget ? `· ${todayKcal} / ${kcalTarget} kcal` : `· ${todayKcal} kcal`}
+          {todayProtein > 0 ? ` · ${Math.round(todayProtein)}g protein` : ''}
+        </SectionTitle>
         <Card style={{ gap: Spacing.two }}>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <TextInput
@@ -93,6 +111,14 @@ export default function BodyTab() {
               onChangeText={setKcalText}
               keyboardType="number-pad"
               placeholder="kcal"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <TextInput
+              style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 0.9 }]}
+              value={proteinText}
+              onChangeText={setProteinText}
+              keyboardType="decimal-pad"
+              placeholder="prot g"
               placeholderTextColor={colors.textSecondary}
             />
             <Button title="Add" onPress={addEntry} />
@@ -111,7 +137,9 @@ export default function BodyTab() {
               }
               style={styles.entryRow}>
               <Text style={{ color: colors.text }}>{e.label ?? 'Entry'}</Text>
-              <Text style={{ color: colors.textSecondary }}>{e.kcal} kcal</Text>
+              <Text style={{ color: colors.textSecondary }}>
+                {e.kcal} kcal{e.protein_g != null ? ` · ${e.protein_g}g` : ''}
+              </Text>
             </Pressable>
           ))}
           {entries.length === 0 && (

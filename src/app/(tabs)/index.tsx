@@ -7,21 +7,35 @@ import { Button, Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  RoutineRow, Workout,
-  deleteRoutine, getActiveWorkout, listRoutines, startWorkout, startWorkoutFromRoutine,
+  PeriodSummary, RoutineRow, Workout,
+  deleteRoutine, getActiveWorkout, getPeriodSummary, listRoutines,
+  startWorkout, startWorkoutFromRoutine,
 } from '@/db/queries';
 import { formatDateTime } from '@/lib/dates';
+import { useSettings } from '@/lib/settings-context';
+import { weightLabel } from '@/lib/units';
+
+/** Monday 00:00 of the current week, local time. */
+function startOfWeekIso(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString();
+}
 
 export default function WorkoutTab() {
   const db = useSQLiteContext();
   const colors = useTheme();
+  const { unit } = useSettings();
   const [active, setActive] = useState<Workout | null>(null);
   const [routines, setRoutines] = useState<RoutineRow[]>([]);
+  const [week, setWeek] = useState<PeriodSummary | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       getActiveWorkout(db).then(setActive);
       listRoutines(db).then(setRoutines);
+      getPeriodSummary(db, startOfWeekIso()).then(setWeek);
     }, [db]),
   );
 
@@ -56,6 +70,12 @@ export default function WorkoutTab() {
       contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two }}
       ListHeaderComponent={
         <View style={{ marginBottom: Spacing.two }}>
+          {week && week.workouts > 0 && (
+            <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: Spacing.two }}>
+              This week: {week.workouts} workout{week.workouts === 1 ? '' : 's'} ·{' '}
+              {weightLabel(week.tonnage_kg, unit)} lifted
+            </Text>
+          )}
           {active ? (
             <Card style={{ gap: Spacing.two }}>
               <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>
