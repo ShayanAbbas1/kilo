@@ -5,9 +5,10 @@ import { useTheme } from '@/hooks/use-theme';
 
 // ponytail: emoji tab icons — no icon package in the SDK 57 template; swap for real icons if it grates
 function icon(emoji: string) {
-  return ({ focused }: { focused: boolean }) => (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emoji}</Text>
-  );
+  function TabIcon({ focused }: { focused: boolean }) {
+    return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emoji}</Text>;
+  }
+  return TabIcon;
 }
 
 export default function TabLayout() {

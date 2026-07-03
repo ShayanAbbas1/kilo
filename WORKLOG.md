@@ -2,6 +2,29 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-04 — Session 1 (cont.): full Phase-1 UI
+
+**Done:**
+- Repo: https://github.com/ShayanAbbas1/kilo (private). gh CLI has two accounts — ShayanAbbas1 must stay the active one for this repo (ShayanCL is the owner's work account, do not push there). Remote is HTTPS + gh credential helper.
+- Replaced all template demo screens/components. Kept `src/constants/theme.ts` (added tint/success/successBg/danger), `use-color-scheme`, `use-theme`. Deleted global.css and the `.web` color-scheme variant (not targeting web).
+- `src/app/_layout.tsx` — Stack wrapped in SQLiteProvider(onInit=migrate) + SettingsProvider (unit + kcal target context, `src/lib/settings-context.tsx`)
+- `(tabs)`: index (start/resume workout), history, body. Emoji tab icons (no icon pkg). ⚙️ header link → settings modal.
+- `workout/[id].tsx` — the Strong-parity logging screen: exercise cards, set rows (tap set# cycles working→warmup→failure; W/F labels, working sets numbered), prev-session ghost column + placeholders, completing an empty set adopts ghost values (Strong behavior), long-press set = delete, long-press exercise name = remove exercise, +Add Set, +Add Exercise (picker modal), Finish (header, prunes incomplete via finishWorkout), Discard. State: VM in React state, every edit writes straight to SQLite (crash-safe), controlled inputs so no focus loss.
+- `exercise-picker.tsx` — live search (SQL LIKE), rows show muscles+equipment, custom exercises marked ★, "+ Create <query>" → inline muscle/equipment chips form.
+- `history/[id].tsx` — read-only detail + Delete in header.
+- `body.tsx` — today weigh-in (upsert), calorie entries (meal label optional) with kcal-vs-target, weight trend list w/ avg7, long-press deletes.
+- `settings.tsx` — kg/lbs toggle, kcal target, JSON export via expo-sharing (legacy FS API, see ponytail comment), import/restore via document picker (replace-all with confirm).
+
+**Tested:** `npx tsc --noEmit` clean, `expo lint` clean, `node scripts/test-db.mjs` passes, `npx expo export --platform android` bundles (3.5MB hbc). NOT yet run on a device/emulator — first on-device smoke test is the top of the next session.
+
+**Known gaps / next:**
+1. On-device smoke test via `npm start` + Expo Go (owner's Android phone) — expect layout nits in the set-row grid
+2. Rest timer (task 5) — in-app countdown first, expo-notifications later
+3. Routines (task 5) — save-as-template + start-from-template; schema already has routines/routine_exercises
+4. Editing a finished workout (reopen: set finished_at NULL?)
+5. Protein UI on calorie entries (DB column exists)
+6. Weight-input steppers with plate-sensible increments (+2.5kg / +5lb)
+
 ## 2026-07-04 — Session 1: foundation
 
 **Done:**

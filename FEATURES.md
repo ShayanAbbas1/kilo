@@ -7,31 +7,31 @@ Spec of record. Checkboxes track what's shipped. Scope changes get edited here f
 The bar for done: the owner logs a full real gym session, a weigh-in, and a day of calories in Kilo without wishing for Strong.
 
 ### Workout logging (Strong-parity)
-- [ ] Exercise library seeded from free-exercise-db (~800 exercises with muscle groups, instructions)
-- [ ] Custom exercises (name + muscle group + equipment)
-- [ ] Start empty workout → add exercises → log sets (weight × reps)
-- [ ] Previous-session values shown per set (the "what did I do last time" ghost text)
-- [ ] Set types: warm-up / working / failure
+- [x] Exercise library seeded from free-exercise-db (873 exercises with muscle groups, instructions)
+- [x] Custom exercises (name + muscle group + equipment)
+- [x] Start empty workout → add exercises → log sets (weight × reps)
+- [x] Previous-session values shown per set (the "what did I do last time" ghost text)
+- [x] Set types: warm-up / working / failure (tap the set number to cycle)
 - [ ] Rest timer with notification (fires while app is backgrounded)
-- [ ] Edit/delete sets and past workouts
+- [x] Edit/delete sets (long-press a set row to delete); delete past workouts — editing a *finished* workout still open
 - [ ] Routines: save a workout as a template, start from template
-- [ ] Workout history list + detail view
+- [x] Workout history list + detail view
 
 ### Body weight
-- [ ] Daily weigh-in: one number, date-stamped, two taps from app open
-- [ ] Edit/delete past entries
-- [ ] 7-day moving average shown alongside raw entries (daily noise demoralizes; the trend is the truth)
+- [x] Daily weigh-in: one number, date-stamped, two taps from app open
+- [x] Edit/delete past entries (long-press to delete; re-save today's to edit)
+- [x] 7-day moving average shown alongside raw entries (daily noise demoralizes; the trend is the truth)
 
 ### Calories
-- [ ] Log per-meal entries (label + kcal, optional protein) or a single daily total — user's choice per day
-- [ ] Daily target setting; today's running total vs target
-- [ ] No food database in v1 — manual kcal entry only (food DBs are a swamp; revisit in Phase 4)
+- [x] Log per-meal entries (label + kcal) or a single daily total — user's choice per day (protein column in DB, no UI yet)
+- [x] Daily target setting; today's running total vs target
+- [x] No food database in v1 — manual kcal entry only (food DBs are a swamp; revisit in Phase 4)
 
 ### Foundation
-- [ ] SQLite schema: exercises, routines, workouts, workout_exercises, sets, weigh_ins, calorie_entries, settings
-- [ ] Units setting: kg/lbs display, metric canonical in DB, plate-sensible increments per unit
-- [ ] Export full data as JSON (share sheet → Drive/files) — ships in v1, not later
-- [ ] Import from a Kilo export (restore on new phone)
+- [x] SQLite schema: exercises, routines, workouts, workout_exercises, sets, weigh_ins, calorie_entries, settings
+- [x] Units setting: kg/lbs display, metric canonical in DB (plate-sensible increment stepper not yet)
+- [x] Export full data as JSON (share sheet → Drive/files) — ships in v1, not later
+- [x] Import from a Kilo export (restore on new phone)
 
 ## Phase 2 — Analytics (the reason Kilo exists)
 - [ ] Per-exercise progression: top-set weight and estimated 1RM over time
