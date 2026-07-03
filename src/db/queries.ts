@@ -51,6 +51,7 @@ export type WorkoutExerciseDetail = {
   name: string;
   position: number;
   notes: string | null;
+  superset_with_next: number; // 1 = linked to the next exercise by position (superset)
   sets: WorkoutSet[];
   prev: PrevSet[];
   best_weight: number | null;
@@ -158,9 +159,10 @@ export async function getWorkoutExercises(
   db: SQLiteDatabase, workoutId: string,
 ): Promise<WorkoutExerciseDetail[]> {
   const rows = await db.getAllAsync<
-    { id: string; exercise_id: string; name: string; position: number; notes: string | null }
+    { id: string; exercise_id: string; name: string; position: number; notes: string | null;
+      superset_with_next: number }
   >(
-    `SELECT we.id, we.exercise_id, we.position, we.notes, e.name
+    `SELECT we.id, we.exercise_id, we.position, we.notes, we.superset_with_next, e.name
      FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
      WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
   const result: WorkoutExerciseDetail[] = [];
@@ -210,7 +212,16 @@ export async function addExerciseToWorkout(
   return weId;
 }
 
+export async function setSupersetWithNext(
+  db: SQLiteDatabase, weId: string, on: boolean,
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE workout_exercises SET superset_with_next = ? WHERE id = ?', on ? 1 : 0, weId);
+}
+
 export async function removeWorkoutExercise(db: SQLiteDatabase, weId: string): Promise<void> {
+  // ponytail: deleting a mid-chain exercise leaves the prev exercise's flag pointing at
+  // whatever is now next — acceptable, the chain just re-links. No special handling.
   await db.runAsync('DELETE FROM sets WHERE workout_exercise_id = ?', weId);
   await db.runAsync('DELETE FROM workout_exercises WHERE id = ?', weId);
 }
@@ -315,17 +326,19 @@ export async function createRoutineFromWorkout(
   db: SQLiteDatabase, workoutId: string, name: string,
 ): Promise<string> {
   const routineId = newId();
-  const exercises = await db.getAllAsync<{ exercise_id: string; position: number; n: number }>(
-    `SELECT we.exercise_id, we.position,
+  const exercises = await db.getAllAsync<
+    { exercise_id: string; position: number; n: number; superset_with_next: number }
+  >(
+    `SELECT we.exercise_id, we.position, we.superset_with_next,
        (SELECT COUNT(*) FROM sets s WHERE s.workout_exercise_id = we.id AND s.set_type != 'warmup') AS n
      FROM workout_exercises we WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
   await db.withTransactionAsync(async () => {
     await db.runAsync('INSERT INTO routines (id, name) VALUES (?, ?)', routineId, name.trim());
     for (const ex of exercises) {
       await db.runAsync(
-        `INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets)
-         VALUES (?, ?, ?, ?, ?)`,
-        newId(), routineId, ex.exercise_id, ex.position, Math.max(1, ex.n));
+        `INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, superset_with_next)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        newId(), routineId, ex.exercise_id, ex.position, Math.max(1, ex.n), ex.superset_with_next);
     }
   });
   return routineId;
@@ -342,11 +355,14 @@ export async function startWorkoutFromRoutine(
   const routine = await db.getFirstAsync<{ name: string }>(
     'SELECT name FROM routines WHERE id = ?', routineId);
   const workoutId = await startWorkout(db, routine?.name);
-  const exercises = await db.getAllAsync<{ exercise_id: string; target_sets: number }>(
-    'SELECT exercise_id, target_sets FROM routine_exercises WHERE routine_id = ? ORDER BY position',
+  const exercises = await db.getAllAsync<
+    { exercise_id: string; target_sets: number; superset_with_next: number }
+  >(
+    'SELECT exercise_id, target_sets, superset_with_next FROM routine_exercises WHERE routine_id = ? ORDER BY position',
     routineId);
   for (const ex of exercises) {
-    await addExerciseToWorkout(db, workoutId, ex.exercise_id, ex.target_sets);
+    const weId = await addExerciseToWorkout(db, workoutId, ex.exercise_id, ex.target_sets);
+    if (ex.superset_with_next) await setSupersetWithNext(db, weId, true);
   }
   return workoutId;
 }

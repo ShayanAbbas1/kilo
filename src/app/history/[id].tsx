@@ -115,8 +115,14 @@ export default function WorkoutDetail() {
           />
         </Card>
       )}
-      {exercises.map((ex) => (
-        <Card key={ex.id} style={{ gap: 6 }}>
+      {exercises.map((ex, i) => (
+        <Card
+          key={ex.id}
+          style={{
+            gap: 6,
+            ...((ex.superset_with_next || exercises[i - 1]?.superset_with_next)
+              && { borderLeftWidth: 3, borderLeftColor: colors.tint }),
+          }}>
           <Pressable onPress={() => router.push(`/exercise/${ex.exercise_id}`)}>
             <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>
               {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>

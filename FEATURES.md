@@ -49,11 +49,11 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Weigh-in delta vs 7-day average (▲▼) on Body tab
 - [x] Edit a finished workout (reopen from history detail)
 - [x] Weekly summary (workouts + tonnage) on Workout tab
-- [ ] Supersets
+- [x] Supersets: ⛓ toggle on each exercise links it to the next (chains fall out naturally); linked cards share a tint left-border and rest is skipped mid-chain. Survives save/start-as-routine.
 - [x] Plate calculator (`/plates` modal: per-side breakdown from a target weight, greedy from standard plate sets; ⚖ button on each exercise in the active workout, prefilled from last logged/ghost weight)
 - [x] RPE/RIR per set (RPE 0–10, optional field per set, shown when enabled in settings; always shown in history if present)
 - [x] Notes on workouts (multiline field on active workout, shown in history) + per-exercise notes (below each exercise's sets, shown in history)
-- [ ] Home-screen widget / quick actions (log weigh-in from launcher)
+- [ ] Home-screen widget / quick actions (log weigh-in from launcher) (needs a dev build — Expo Go can't register launcher widgets; deferred until off Expo Go)
 - [x] Dark mode (system theme, all components themed)
 
 ## Phase 4 — Maybe, later, or never

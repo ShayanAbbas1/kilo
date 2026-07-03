@@ -1,6 +1,6 @@
 // Pure SQL, no expo imports — also executed by scripts/test-db.mjs against node:sqlite.
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS meta (
@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
   workout_id TEXT NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
   exercise_id TEXT NOT NULL REFERENCES exercises(id),
   position INTEGER NOT NULL,
-  notes TEXT
+  notes TEXT,
+  superset_with_next INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS sets (
@@ -58,7 +59,8 @@ CREATE TABLE IF NOT EXISTS routine_exercises (
   routine_id TEXT NOT NULL REFERENCES routines(id) ON DELETE CASCADE,
   exercise_id TEXT NOT NULL REFERENCES exercises(id),
   position INTEGER NOT NULL,
-  target_sets INTEGER NOT NULL DEFAULT 3
+  target_sets INTEGER NOT NULL DEFAULT 3,
+  superset_with_next INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS weigh_ins (
@@ -90,6 +92,12 @@ CREATE INDEX IF NOT EXISTS idx_workouts_started ON workouts(started_at);
 export const MIGRATION_V2_SQL = `
 ALTER TABLE sets ADD COLUMN rpe REAL;
 ALTER TABLE workout_exercises ADD COLUMN notes TEXT;
+`;
+
+/** v2 -> v3: supersets — a flag linking an exercise to the next one by position. */
+export const MIGRATION_V3_SQL = `
+ALTER TABLE workout_exercises ADD COLUMN superset_with_next INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE routine_exercises ADD COLUMN superset_with_next INTEGER NOT NULL DEFAULT 0;
 `;
 
 /**

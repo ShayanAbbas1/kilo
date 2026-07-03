@@ -5,7 +5,7 @@ import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
-  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL, MIGRATION_V3_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -149,7 +149,27 @@ assert.ok(!prs.some((r) => r.weight_kg === 20), 'warmups never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 62.5), 'incomplete sets never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 100), 'sets from an unfinished workout never appear');
 
-// --- migration: v1 -> v2 ALTERs applied to a v1-shaped DB match a fresh SCHEMA_SQL install ---
+// --- supersets: flag on a workout_exercise, read back through the app's SELECT ---
+db.prepare('UPDATE workout_exercises SET superset_with_next = 1 WHERE id = ?').run('we1');
+const weRow = db.prepare(
+  `SELECT we.id, we.superset_with_next, e.name
+   FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
+   WHERE we.workout_id = ? ORDER BY we.position`,
+).get('w1');
+assert.equal(weRow.superset_with_next, 1, 'superset flag reads back through the app query');
+
+// routine round-trip: save-as-routine carries the flag into routine_exercises, start-from reads it
+db.prepare('INSERT INTO routines (id, name) VALUES (?, ?)').run('r1', 'Push');
+db.prepare(
+  `INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, superset_with_next)
+   SELECT 're1', 'r1', we.exercise_id, we.position, 3, we.superset_with_next
+   FROM workout_exercises we WHERE we.id = 'we1'`,
+).run();
+assert.equal(
+  db.prepare('SELECT superset_with_next FROM routine_exercises WHERE id = ?').get('re1').superset_with_next,
+  1, 'superset flag survives the routine round-trip');
+
+// --- migration: v1 -> current ALTERs applied to a v1-shaped DB match a fresh SCHEMA_SQL install ---
 const oldDb = new DatabaseSync(':memory:');
 oldDb.exec(`
   CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -170,8 +190,16 @@ oldDb.exec(`
     completed INTEGER NOT NULL DEFAULT 0,
     completed_at TEXT
   );
+  CREATE TABLE routine_exercises (
+    id TEXT PRIMARY KEY,
+    routine_id TEXT NOT NULL,
+    exercise_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    target_sets INTEGER NOT NULL DEFAULT 3
+  );
 `);
 oldDb.exec(MIGRATION_V2_SQL);
+oldDb.exec(MIGRATION_V3_SQL);
 
 const freshDb = new DatabaseSync(':memory:');
 freshDb.exec(SCHEMA_SQL);
@@ -180,7 +208,9 @@ const cols = (d, table) => d.prepare(`PRAGMA table_info(${table})`).all().map((c
 assert.deepEqual(cols(oldDb, 'sets'), cols(freshDb, 'sets'),
   'v1 sets + MIGRATION_V2_SQL matches fresh SCHEMA_SQL columns');
 assert.deepEqual(cols(oldDb, 'workout_exercises'), cols(freshDb, 'workout_exercises'),
-  'v1 workout_exercises + MIGRATION_V2_SQL matches fresh SCHEMA_SQL columns');
+  'v1 workout_exercises + migrations match fresh SCHEMA_SQL columns');
+assert.deepEqual(cols(oldDb, 'routine_exercises'), cols(freshDb, 'routine_exercises'),
+  'v1 routine_exercises + MIGRATION_V3_SQL matches fresh SCHEMA_SQL columns');
 // migrated table is actually usable with the new columns
 oldDb.prepare(
   `INSERT INTO workout_exercises (id, workout_id, exercise_id, position, notes) VALUES ('we', 'w', 'bench', 1, 'note')`,

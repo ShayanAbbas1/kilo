@@ -12,7 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
   addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
-  getWorkoutExercises, removeWorkoutExercise, setExerciseNotes, setWorkoutNotes, updateSet,
+  getWorkoutExercises, removeWorkoutExercise, setExerciseNotes, setSupersetWithNext,
+  setWorkoutNotes, updateSet,
 } from '@/db/queries';
 import { cancelRestDone, scheduleRestDone } from '@/lib/rest-notification';
 import { useSettings } from '@/lib/settings-context';
@@ -33,6 +34,7 @@ type VMExercise = {
   exerciseId: string;
   name: string;
   notes: string;
+  supersetWithNext: boolean; // linked to the next exercise (superset)
   prev: PrevSet[];
   bestWeight: number | null;
   sets: VMSet[];
@@ -106,6 +108,7 @@ export default function ActiveWorkoutScreen() {
         exerciseId: r.exercise_id,
         name: r.name,
         notes: r.notes ?? '',
+        supersetWithNext: !!r.superset_with_next,
         prev: r.prev,
         bestWeight: r.best_weight,
         sets: r.sets.map((s) => ({
@@ -163,6 +166,12 @@ export default function ActiveWorkoutScreen() {
     setExerciseNotes(db, weId, text);
   };
 
+  const onToggleSuperset = (ex: VMExercise) => {
+    const on = !ex.supersetWithNext;
+    patchExercise(ex.weId, { supersetWithNext: on });
+    setSupersetWithNext(db, ex.weId, on);
+  };
+
   const onToggleComplete = (ex: VMExercise, s: VMSet, idx: number) => {
     if (!s.completed) {
       // adopt ghost values if user typed nothing (Strong behavior)
@@ -183,8 +192,11 @@ export default function ActiveWorkoutScreen() {
         ex.bestWeight != null && !isNaN(kgNow) && kgNow > ex.bestWeight;
       patchSet(ex.weId, s.id, { completed: true, weightText, repsText, pr: isPr });
       updateSet(db, s.id, { completed: true });
-      setRestLeft(restSec);
-      rearmRestNotif(restSec);
+      // supersets: no rest mid-chain — go straight to the paired exercise (Strong behavior)
+      if (!ex.supersetWithNext) {
+        setRestLeft(restSec);
+        rearmRestNotif(restSec);
+      }
       if (isPr) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
@@ -313,8 +325,16 @@ export default function ActiveWorkoutScreen() {
       <ScrollView
         contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three }}
         keyboardShouldPersistTaps="handled">
-        {exercises.map((ex) => (
-          <Card key={ex.weId} style={{ gap: Spacing.two }}>
+        {exercises.map((ex, i) => {
+          const inChain = ex.supersetWithNext || !!exercises[i - 1]?.supersetWithNext;
+          const isLast = i === exercises.length - 1;
+          return (
+          <Card
+            key={ex.weId}
+            style={{
+              gap: Spacing.two,
+              ...(inChain && { borderLeftWidth: 3, borderLeftColor: colors.tint }),
+            }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable
                 style={{ flex: 1 }}
@@ -324,9 +344,16 @@ export default function ActiveWorkoutScreen() {
                   {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
                 </Text>
               </Pressable>
-              <Pressable onPress={() => openPlates(ex)} hitSlop={8}>
-                <Text style={{ fontSize: 18, color: colors.textSecondary }}>⚖</Text>
-              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                {!isLast && (
+                  <Pressable onPress={() => onToggleSuperset(ex)} hitSlop={8}>
+                    <Text style={{ fontSize: 18, color: ex.supersetWithNext ? colors.tint : colors.textSecondary }}>⛓</Text>
+                  </Pressable>
+                )}
+                <Pressable onPress={() => openPlates(ex)} hitSlop={8}>
+                  <Text style={{ fontSize: 18, color: colors.textSecondary }}>⚖</Text>
+                </Pressable>
+              </View>
             </View>
             <View style={styles.headerRow}>
               <Text style={[styles.colSet, styles.colHead, { color: colors.textSecondary }]}>SET</Text>
@@ -425,7 +452,8 @@ export default function ActiveWorkoutScreen() {
               multiline
             />
           </Card>
-        ))}
+          );
+        })}
 
         <Button
           title="+ Add Exercise"

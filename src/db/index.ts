@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { MIGRATION_V2_SQL, SCHEMA_SQL, SCHEMA_VERSION } from './sql';
+import { MIGRATION_V2_SQL, MIGRATION_V3_SQL, SCHEMA_SQL, SCHEMA_VERSION } from './sql';
 import seedExercises from '../data/exercises.json';
 
 export const DB_NAME = 'kilo.db';
@@ -16,6 +16,7 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
     "SELECT value FROM meta WHERE key = 'schema_version'");
   const oldVersion = stored ? Number(stored.value) : SCHEMA_VERSION;
   if (oldVersion < 2) await db.execAsync(MIGRATION_V2_SQL);
+  if (oldVersion < 3) await db.execAsync(MIGRATION_V3_SQL);
 
   await db.execAsync(SCHEMA_SQL);
   await db.runAsync(
