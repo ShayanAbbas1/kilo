@@ -1,0 +1,49 @@
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { useSQLiteContext } from 'expo-sqlite';
+import { getSetting, setSetting } from '../db/queries';
+import { Unit } from './units';
+
+type AppSettings = {
+  unit: Unit;
+  setUnit: (u: Unit) => void;
+  kcalTarget: number | null;
+  setKcalTarget: (n: number | null) => void;
+};
+
+const Ctx = createContext<AppSettings>({
+  unit: 'kg',
+  setUnit: () => {},
+  kcalTarget: null,
+  setKcalTarget: () => {},
+});
+
+export function SettingsProvider({ children }: { children: ReactNode }) {
+  const db = useSQLiteContext();
+  const [unit, setUnitState] = useState<Unit>('kg');
+  const [kcalTarget, setKcalTargetState] = useState<number | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const u = await getSetting(db, 'unit');
+      if (u === 'lbs' || u === 'kg') setUnitState(u);
+      const t = await getSetting(db, 'kcal_target');
+      if (t) setKcalTargetState(Number(t));
+    })();
+  }, [db]);
+
+  const setUnit = useCallback((u: Unit) => {
+    setUnitState(u);
+    setSetting(db, 'unit', u);
+  }, [db]);
+
+  const setKcalTarget = useCallback((n: number | null) => {
+    setKcalTargetState(n);
+    setSetting(db, 'kcal_target', n == null ? '' : String(n));
+  }, [db]);
+
+  return <Ctx.Provider value={{ unit, setUnit, kcalTarget, setKcalTarget }}>{children}</Ctx.Provider>;
+}
+
+export function useSettings() {
+  return useContext(Ctx);
+}
