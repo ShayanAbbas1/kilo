@@ -274,6 +274,26 @@ GROUP BY e.id
 ORDER BY sets DESC;
 `;
 
+/**
+ * Weekly working sets per exercise for a muscle group — the granularity
+ * MUSCLE_WEEKLY_SETS_SQL loses; JS maps each exercise to a head/region emphasis
+ * (muscle-heads.ts) and sums, since SQL can't run the name-based regex rules.
+ * Params: since date, muscles JSON array string
+ */
+export const MUSCLE_EXERCISE_WEEKLY_SQL = `
+SELECT strftime('%Y-%W', w.started_at) AS wk, e.name AS exercise_name,
+  e.primary_muscles AS primary_muscles, COUNT(*) AS sets
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id,
+  json_each(e.primary_muscles) je
+WHERE s.completed = 1 AND s.set_type != 'warmup'
+  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND je.value IN (SELECT value FROM json_each(?))
+GROUP BY wk, e.id ORDER BY wk;
+`;
+
 /** Best completed working-set weight ever for an exercise (PR detection). Params: exercise_id */
 export const BEST_WEIGHT_SQL = `
 SELECT MAX(s.weight_kg) AS best

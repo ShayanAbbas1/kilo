@@ -40,7 +40,8 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic, plus a "Recent PRs" feed on Stats (window-function query, first-ever set per exercise excluded)
 - [x] Tonnage per muscle group: Sets/Tonnage toggle on Stats' muscle-group card (heatmap + bar list) and the muscle drill-down's weekly chart, display-unit converted
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
-- [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested. Head-level *aggregation* (sets per head per week) still open.
+- [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested.
+- [x] **Head-level weekly aggregation**: muscle drill-down's "By head/region" card — chip row + weekly ColumnChart + BarList of sets per head/region, via `aggregateHeads()` over `MUSCLE_EXERCISE_WEEKLY_SQL`
 
 ## Phase 3 — Quality of life
 - [x] Elapsed-time in workout header, haptic on set completion

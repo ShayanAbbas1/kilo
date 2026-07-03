@@ -79,3 +79,38 @@ export function muscleEmphasis(exerciseName: string, primaryMuscles: string[]): 
   }
   return out;
 }
+
+export type HeadWeekly = { head: string; total: number; byWeek: Map<string, number> };
+
+/**
+ * Weekly per-exercise set counts (from MUSCLE_EXERCISE_WEEKLY_SQL) -> totals per
+ * head/region emphasis. Exercises whose muscle has no RULES entry contribute
+ * nothing — that's the heuristic's ceiling (per-set tagging would be the
+ * upgrade path, see FEATURES.md); an exercise hitting two matched muscles in
+ * the group counts once per emphasis, since it did train both.
+ */
+export function aggregateHeads(
+  rows: { wk: string; exercise_name: string; primary_muscles: string; sets: number }[],
+  muscles: string[],
+): HeadWeekly[] {
+  const byHead = new Map<string, HeadWeekly>();
+  for (const row of rows) {
+    let primary: string[];
+    try {
+      primary = JSON.parse(row.primary_muscles);
+    } catch {
+      continue;
+    }
+    const matched = primary.filter((m) => muscles.includes(m));
+    for (const head of muscleEmphasis(row.exercise_name, matched)) {
+      let entry = byHead.get(head);
+      if (!entry) {
+        entry = { head, total: 0, byWeek: new Map() };
+        byHead.set(head, entry);
+      }
+      entry.total += row.sets;
+      entry.byWeek.set(row.wk, (entry.byWeek.get(row.wk) ?? 0) + row.sets);
+    }
+  }
+  return [...byHead.values()].sort((a, b) => b.total - a.total);
+}
