@@ -2,6 +2,10 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-04 — Session 1 (cont. 2): SDK 57 → 56 downgrade
+
+Owner's Expo Go said "project is incompatible with this version" — SDK 57 went stable days ago and Play-Store Expo Go still targets SDK 56. Downgraded: removed unused template deps (@expo/ui, expo-glass-effect, expo-symbols, expo-web-browser, expo-image, expo-device, expo-font), `expo@sdk-56` + `expo install --fix`, clean reinstall to dedupe. expo-doctor 21/21, tsc/lint/test-db/export all green. RN is now 0.85.3. Do not bump the SDK until Expo Go supports it.
+
 ## 2026-07-04 — Session 1 (cont.): full Phase-1 UI
 
 **Done:**
