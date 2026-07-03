@@ -221,6 +221,41 @@ SELECT wk, AVG(day_kcal) AS value FROM (
 GROUP BY wk ORDER BY wk;
 `;
 
+/**
+ * Weekly working-set counts for a group of muscles (drill-down chart).
+ * Params: muscles as a JSON array string, since date
+ */
+export const MUSCLE_WEEKLY_SETS_SQL = `
+SELECT strftime('%Y-%W', w.started_at) AS wk, COUNT(*) AS sets
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id,
+  json_each(e.primary_muscles) je
+WHERE s.completed = 1 AND s.set_type != 'warmup'
+  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND je.value IN (SELECT value FROM json_each(?))
+GROUP BY wk ORDER BY wk;
+`;
+
+/**
+ * Exercises that trained a muscle group in a period, with working-set counts.
+ * Params: since date, muscles JSON array string
+ */
+export const MUSCLE_EXERCISES_SQL = `
+SELECT e.id, e.name, COUNT(*) AS sets
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id,
+  json_each(e.primary_muscles) je
+WHERE s.completed = 1 AND s.set_type != 'warmup'
+  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND je.value IN (SELECT value FROM json_each(?))
+GROUP BY e.id
+ORDER BY sets DESC;
+`;
+
 /** Best completed working-set weight ever for an exercise (PR detection). Params: exercise_id */
 export const BEST_WEIGHT_SQL = `
 SELECT MAX(s.weight_kg) AS best

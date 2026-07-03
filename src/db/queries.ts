@@ -5,7 +5,9 @@ import {
   BEST_WEIGHT_SQL,
   CALORIE_DAYS_SQL,
   EXERCISE_PROGRESSION_SQL,
+  MUSCLE_EXERCISES_SQL,
   MUSCLE_SETS_SQL,
+  MUSCLE_WEEKLY_SETS_SQL,
   PERIOD_SUMMARY_SQL,
   PREV_SETS_SQL,
   TOP_EXERCISES_SQL,
@@ -418,6 +420,21 @@ export async function getWeeklyTrend(db: SQLiteDatabase, sinceDate: string): Pro
     return weeks.map((wk) => m.get(wk) ?? null);
   };
   return { weeks, weight: series(w), tonnage: series(t), kcal: series(k) };
+}
+
+export type MuscleWeekRow = { wk: string; sets: number };
+export type MuscleExerciseRow = { id: string; name: string; sets: number };
+
+export async function getMuscleWeeklySets(
+  db: SQLiteDatabase, muscles: string[], sinceDate: string,
+): Promise<MuscleWeekRow[]> {
+  return db.getAllAsync<MuscleWeekRow>(MUSCLE_WEEKLY_SETS_SQL, sinceDate, JSON.stringify(muscles));
+}
+
+export async function getMuscleExercises(
+  db: SQLiteDatabase, muscles: string[], sinceDate: string,
+): Promise<MuscleExerciseRow[]> {
+  return db.getAllAsync<MuscleExerciseRow>(MUSCLE_EXERCISES_SQL, sinceDate, JSON.stringify(muscles));
 }
 
 export async function getBestWeight(db: SQLiteDatabase, exerciseId: string): Promise<number | null> {

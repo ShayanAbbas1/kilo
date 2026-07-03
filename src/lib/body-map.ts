@@ -23,6 +23,13 @@ export const MUSCLE_TO_SLUG: Record<string, Slug> = {
   triceps: 'triceps',
 };
 
+/** slug → the fexdb muscles it aggregates (for drill-down) */
+export const SLUG_TO_MUSCLES: Record<string, string[]> = Object.entries(MUSCLE_TO_SLUG)
+  .reduce((acc, [muscle, slug]) => {
+    (acc[slug] ??= []).push(muscle);
+    return acc;
+  }, {} as Record<string, string[]>);
+
 /** 5-step heat ramp, pale → red. Absolute colors, readable on both themes. */
 export const HEAT_COLORS = ['#FDD9A0', '#FDB863', '#F9824A', '#EE5A36', '#D7263D'];
 

@@ -121,7 +121,7 @@ export default function StatsTab() {
             </Pressable>
           ))}
         </View>
-        <BodyHeatmap data={toBodyData(muscles)} />
+        <BodyHeatmap data={toBodyData(muscles)} onPressSlug={(slug) => router.push(`/muscle/${slug}`)} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' }}>
           <Text style={{ color: colors.textSecondary, fontSize: 11 }}>fewer sets</Text>
           {HEAT_COLORS.map((c) => (

@@ -5,6 +5,7 @@ import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -119,6 +120,14 @@ assert.equal(wTon.reduce((a, r) => a + r.value, 0),
 const wKcal = db.prepare(WEEKLY_KCAL_SQL).all('2026-06-01');
 const kcalWk = wKcal.find((r) => r.wk === '2026-26');
 assert.equal(kcalWk.value, (1250 + 1900) / 2, 'avg of daily sums, not avg of entries');
+
+// --- muscle drill-down ---
+const mws = db.prepare(MUSCLE_WEEKLY_SETS_SQL).all('2026-06-01', '["chest"]');
+assert.equal(mws.reduce((a, r) => a + r.sets, 0), 4, 'chest working sets across both weeks');
+const mex = db.prepare(MUSCLE_EXERCISES_SQL).all('2026-06-01', '["chest"]');
+assert.equal(mex[0].id, 'bench');
+assert.equal(mex[0].sets, 4);
+assert.equal(db.prepare(MUSCLE_EXERCISES_SQL).all('2026-06-01', '["quadriceps"]').length, 0);
 
 // --- PR detection ---
 assert.equal(db.prepare(BEST_WEIGHT_SQL).get('bench').best, 60, 'best excludes active workout (100kg) and warmups');

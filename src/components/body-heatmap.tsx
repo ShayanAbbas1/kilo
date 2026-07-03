@@ -6,11 +6,12 @@ import { useTheme } from '@/hooks/use-theme';
 
 /** Front + back figures side by side, shared data/colors. */
 export function BodyHeatmap({
-  data, colors = HEAT_COLORS, scale = 0.85,
+  data, colors = HEAT_COLORS, scale = 0.85, onPressSlug,
 }: {
   data: ExtendedBodyPart[];
   colors?: string[];
   scale?: number;
+  onPressSlug?: (slug: string) => void;
 }) {
   const theme = useTheme();
   return (
@@ -26,6 +27,9 @@ export function BodyHeatmap({
               colors={colors}
               border={theme.textSecondary}
               defaultFill={theme.backgroundSelected}
+              onBodyPartPress={
+                onPressSlug ? (part) => part.slug && onPressSlug(part.slug) : undefined
+              }
             />
             <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 2 }}>{side}</Text>
           </View>

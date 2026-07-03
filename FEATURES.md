@@ -39,7 +39,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] **The Trendline**: 12-week combined chart on Stats — body weight, weekly tonnage, avg daily kcal, each normalized to its own range (read the shapes)
 - [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic (PR history feed still open)
 - [ ] Tonnage per muscle group (sets done; tonnage variant pending)
-- [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle
+- [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested. Head-level *aggregation* (sets per head per week) still open.
 
 ## Phase 3 — Quality of life
