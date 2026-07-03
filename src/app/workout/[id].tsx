@@ -48,6 +48,8 @@ export default function ActiveWorkoutScreen() {
   const [startedAt, setStartedAt] = useState<string | null>(null);
 
   const [notes, setNotes] = useState('');
+  // which weight input is focused — drives the plate-increment bar above the keyboard
+  const [weightFocus, setWeightFocus] = useState<{ weId: string; setId: string } | null>(null);
 
   useEffect(() => {
     getWorkout(db, id).then((w) => {
@@ -215,6 +217,23 @@ export default function ActiveWorkoutScreen() {
     router.push({ pathname: '/plates', params: w ? { w } : {} });
   };
 
+  // plate-sensible step in display units
+  const weightStep = unit === 'kg' ? 2.5 : 5;
+
+  const bumpWeight = (delta: number) => {
+    if (!weightFocus) return;
+    const ex = exercises.find((e) => e.weId === weightFocus.weId);
+    const idx = ex?.sets.findIndex((x) => x.id === weightFocus.setId) ?? -1;
+    if (!ex || idx < 0) return;
+    const s = ex.sets[idx];
+    const ghost = ex.prev[idx];
+    const base = parseFloat(s.weightText.replace(',', '.'));
+    const cur = !isNaN(base) ? base
+      : ghost?.weight_kg != null ? parseFloat(formatWeight(ghost.weight_kg, unit)) : 0;
+    const next = Math.max(0, Math.round((cur + delta) * 100) / 100);
+    onWeightChange(weightFocus.weId, weightFocus.setId, String(next));
+  };
+
   // label: warmup 'W', failure 'F', working sets numbered 1..n
   const setLabel = (sets: VMSet[], idx: number): string => {
     const s = sets[idx];
@@ -306,6 +325,8 @@ export default function ActiveWorkoutScreen() {
                       style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background }]}
                       value={s.weightText}
                       onChangeText={(t) => onWeightChange(ex.weId, s.id, t)}
+                      onFocus={() => setWeightFocus({ weId: ex.weId, setId: s.id })}
+                      onBlur={() => setWeightFocus(null)}
                       keyboardType="decimal-pad"
                       placeholder={ghost?.weight_kg != null ? formatWeight(ghost.weight_kg, unit) : ''}
                       placeholderTextColor={colors.textSecondary}
@@ -361,6 +382,21 @@ export default function ActiveWorkoutScreen() {
         />
         <Button title="Discard Workout" kind="danger" onPress={onDiscard} />
       </ScrollView>
+      {weightFocus != null && (
+        <View style={[styles.stepBar, { backgroundColor: colors.backgroundElement }]}>
+          {[-weightStep, weightStep].map((d) => (
+            <Pressable
+              key={d}
+              onPress={() => bumpWeight(d)}
+              hitSlop={8}
+              style={[styles.stepBtn, { backgroundColor: colors.backgroundSelected }]}>
+              <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '700' }}>
+                {d > 0 ? '+' : '−'}{Math.abs(d)} {unit}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -380,6 +416,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.two,
     paddingVertical: 4,
   },
+  stepBar: {
+    flexDirection: 'row', gap: Spacing.two,
+    paddingVertical: 8, paddingHorizontal: Spacing.three,
+  },
+  stepBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
   colHead: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
   colSet: { width: 32 },
   colPrev: { flex: 1.2, fontSize: 13, textAlign: 'center' },

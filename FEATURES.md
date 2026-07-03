@@ -29,7 +29,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 
 ### Foundation
 - [x] SQLite schema: exercises, routines, workouts, workout_exercises, sets, weigh_ins, calorie_entries, settings
-- [x] Units setting: kg/lbs display, metric canonical in DB (plate-sensible increment stepper not yet)
+- [x] Units setting: kg/lbs display, metric canonical in DB; plate-sensible ± stepper bar (2.5 kg / 5 lb) above the keyboard while a weight input is focused
 - [x] Export full data as JSON (share sheet → Drive/files) — ships in v1, not later
 - [x] Import from a Kilo export (restore on new phone)
 
@@ -37,7 +37,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Stats tab: weight trend chart (90d, raw + 7-day avg lines, trend delta), sets per muscle group (7d/30d/365d, json_each over primary_muscles), calories vs target columns (14d), most-trained exercises list
 - [x] Per-exercise progression screen (`/exercise/[id]`): est. 1RM (Epley) / top weight / volume line chart with metric toggle, bests row, session list, how-to instructions. Linked from Stats, workout screen (tap name), history detail.
 - [x] **The Trendline**: 12-week combined chart on Stats — body weight, weekly tonnage, avg daily kcal, each normalized to its own range (read the shapes)
-- [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic (PR history feed still open)
+- [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic, plus a "Recent PRs" feed on Stats (window-function query, first-ever set per exercise excluded)
 - [x] Tonnage per muscle group: Sets/Tonnage toggle on Stats' muscle-group card (heatmap + bar list) and the muscle drill-down's weekly chart, display-unit converted
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested. Head-level *aggregation* (sets per head per week) still open.
