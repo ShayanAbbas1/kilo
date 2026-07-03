@@ -376,7 +376,7 @@ export async function getCalorieEntries(db: SQLiteDatabase, date: string): Promi
 // ---------- analytics ----------
 
 export type ProgressionRow = { day: string; top_weight: number; est1rm: number; volume: number };
-export type MuscleSetsRow = { muscle: string; sets: number };
+export type MuscleSetsRow = { muscle: string; sets: number; tonnage: number };
 export type TopExerciseRow = { id: string; name: string; sessions: number; best_weight: number | null };
 export type PeriodSummary = { workouts: number; tonnage_kg: number };
 
@@ -422,7 +422,7 @@ export async function getWeeklyTrend(db: SQLiteDatabase, sinceDate: string): Pro
   return { weeks, weight: series(w), tonnage: series(t), kcal: series(k) };
 }
 
-export type MuscleWeekRow = { wk: string; sets: number };
+export type MuscleWeekRow = { wk: string; sets: number; tonnage: number };
 export type MuscleExerciseRow = { id: string; name: string; sets: number };
 
 export async function getMuscleWeeklySets(

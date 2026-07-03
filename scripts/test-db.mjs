@@ -96,7 +96,10 @@ assert.equal(prog[1].volume, 60 * 8 + 60 * 7, 'working-set volume only, warmups 
 const muscles = db.prepare(MUSCLE_SETS_SQL).all('2026-06-01');
 const chest = muscles.find((m) => m.muscle === 'chest');
 assert.equal(chest.sets, 4, '2 working sets in w1 + 2 in w2 (warmup excluded)');
-assert.equal(db.prepare(MUSCLE_SETS_SQL).all('2026-06-25').find((m) => m.muscle === 'chest').sets, 2);
+assert.equal(chest.tonnage, 50 * 10 + 55 * 8 + 60 * 8 + 60 * 7, 'tonnage sums weight*reps, warmups excluded');
+const chestSince25 = db.prepare(MUSCLE_SETS_SQL).all('2026-06-25').find((m) => m.muscle === 'chest');
+assert.equal(chestSince25.sets, 2);
+assert.equal(chestSince25.tonnage, 60 * 8 + 60 * 7);
 
 // --- analytics: top exercises ---
 const top = db.prepare(TOP_EXERCISES_SQL).all(5);
@@ -124,6 +127,8 @@ assert.equal(kcalWk.value, (1250 + 1900) / 2, 'avg of daily sums, not avg of ent
 // --- muscle drill-down ---
 const mws = db.prepare(MUSCLE_WEEKLY_SETS_SQL).all('2026-06-01', '["chest"]');
 assert.equal(mws.reduce((a, r) => a + r.sets, 0), 4, 'chest working sets across both weeks');
+assert.equal(mws.reduce((a, r) => a + r.tonnage, 0), 50 * 10 + 55 * 8 + 60 * 8 + 60 * 7,
+  'weekly tonnage sums to same chest volume across both weeks');
 const mex = db.prepare(MUSCLE_EXERCISES_SQL).all('2026-06-01', '["chest"]');
 assert.equal(mex[0].id, 'bench');
 assert.equal(mex[0].sets, 4);

@@ -14,10 +14,11 @@ import {
   getCalorieDays, getMuscleSets, getTopExercises, getWeeklyTrend, getWeightTrend,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
-import { formatWeight } from '@/lib/units';
+import { formatWeight, toDisplayWeight } from '@/lib/units';
 
 type Range = 'week' | 'month' | 'year';
 const RANGE_DAYS: Record<Range, number> = { week: 7, month: 30, year: 365 };
+type MuscleMetric = 'sets' | 'tonnage';
 
 function daysAgoIso(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString();
@@ -28,6 +29,7 @@ export default function StatsTab() {
   const colors = useTheme();
   const { unit, kcalTarget } = useSettings();
   const [range, setRange] = useState<Range>('week');
+  const [muscleMetric, setMuscleMetric] = useState<MuscleMetric>('sets');
   const [weights, setWeights] = useState<WeightRow[]>([]);
   const [muscles, setMuscles] = useState<MuscleSetsRow[]>([]);
   const [calories, setCalories] = useState<CalorieDay[]>([]);
@@ -121,15 +123,47 @@ export default function StatsTab() {
             </Pressable>
           ))}
         </View>
-        <BodyHeatmap data={toBodyData(muscles)} onPressSlug={(slug) => router.push(`/muscle/${slug}`)} />
+        <View style={{ flexDirection: 'row', gap: Spacing.two, alignSelf: 'flex-start' }}>
+          {(['sets', 'tonnage'] as MuscleMetric[]).map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => setMuscleMetric(m)}
+              style={{
+                paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
+                backgroundColor: muscleMetric === m ? colors.tint : colors.backgroundSelected,
+              }}>
+              <Text style={{
+                color: muscleMetric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12,
+              }}>
+                {m === 'sets' ? 'Sets' : 'Tonnage'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {/* toBodyData buckets relative to the busiest muscle, so feeding it either
+            metric's value under `sets` is enough to make the heatmap follow it too. */}
+        <BodyHeatmap
+          data={toBodyData(muscleMetric === 'tonnage'
+            ? muscles.map((m) => ({ muscle: m.muscle, sets: m.tonnage }))
+            : muscles)}
+          onPressSlug={(slug) => router.push(`/muscle/${slug}`)}
+        />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' }}>
-          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>fewer sets</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+            fewer {muscleMetric === 'tonnage' ? 'kg' : 'sets'}
+          </Text>
           {HEAT_COLORS.map((c) => (
             <View key={c} style={{ width: 14, height: 8, borderRadius: 2, backgroundColor: c }} />
           ))}
           <Text style={{ color: colors.textSecondary, fontSize: 11 }}>more</Text>
         </View>
-        <BarList data={muscles.map((m) => ({ label: m.muscle, value: m.sets }))} />
+        <BarList
+          data={muscles.map((m) => ({
+            label: m.muscle,
+            value: muscleMetric === 'tonnage' ? toDisplayWeight(m.tonnage, unit) : m.sets,
+          }))}
+          formatValue={(v) => String(Math.round(v))}
+        />
       </Card>
 
       <SectionTitle>Calories — last 14 days</SectionTitle>

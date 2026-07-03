@@ -153,7 +153,8 @@ ORDER BY day;
  * the exercise's primary_muscles array). Params: since ISO date
  */
 export const MUSCLE_SETS_SQL = `
-SELECT je.value AS muscle, COUNT(*) AS sets
+SELECT je.value AS muscle, COUNT(*) AS sets,
+  COALESCE(SUM(s.weight_kg * s.reps), 0) AS tonnage
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
@@ -226,7 +227,8 @@ GROUP BY wk ORDER BY wk;
  * Params: muscles as a JSON array string, since date
  */
 export const MUSCLE_WEEKLY_SETS_SQL = `
-SELECT strftime('%Y-%W', w.started_at) AS wk, COUNT(*) AS sets
+SELECT strftime('%Y-%W', w.started_at) AS wk, COUNT(*) AS sets,
+  COALESCE(SUM(s.weight_kg * s.reps), 0) AS tonnage
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
