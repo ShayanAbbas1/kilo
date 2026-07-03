@@ -28,6 +28,7 @@ Free, local-first workout + body-weight + calorie tracker. Android-first via Exp
 
 ## Conventions
 
-- Roadmap and scope live in FEATURES.md — update it when scope changes; it is the spec of record
+- FEATURES.md is the spec of record. Any commit that ships, changes, or defers a feature updates FEATURES.md **in the same commit** — check the box, one line on what shipped. Nobody will ask for this; it's part of "done".
+- This rule propagates: when dispatching a subagent or workflow to build a feature, its task prompt must include the FEATURES.md edit and end with "read AGENTS.md first".
 - Weights in kg (REAL), dates as ISO-8601 strings, all in SQLite
 - Keep it lazy: no state-management library until React state + SQLite hurts, no component library until hand-rolled styles hurt
