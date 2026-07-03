@@ -16,6 +16,7 @@ export const Colors = {
     success: '#34C759',
     successBg: '#E4F8EA',
     danger: '#FF3B30',
+    accent: '#FF9500',
   },
   dark: {
     text: '#ffffff',
@@ -27,6 +28,7 @@ export const Colors = {
     success: '#30D158',
     successBg: '#12351C',
     danger: '#FF453A',
+    accent: '#FF9F0A',
   },
 } as const;
 

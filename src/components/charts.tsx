@@ -159,6 +159,78 @@ export function ColumnChart({
   );
 }
 
+export type TrendSeries = {
+  label: string;
+  color: string;
+  values: (number | null)[];
+  current: string; // formatted latest value for the legend
+};
+
+/**
+ * Normalized multi-series overlay — each series scaled to its own min/max so
+ * kg, kcal and tonnage share one timeline. Shape comparison, not absolute values.
+ */
+export function TrendChart({
+  series, labels, height = 170,
+}: {
+  series: TrendSeries[];
+  labels: string[];
+  height?: number;
+}) {
+  const colors = useTheme();
+  const [width, setWidth] = useState(0);
+  const n = labels.length;
+  if (n === 0 || series.every((s) => s.values.every((v) => v == null))) {
+    return <EmptyChart height={height} />;
+  }
+
+  const px = (i: number) => (n === 1 ? width / 2 : (i / (n - 1)) * (width - 8) + 4);
+  const pathFor = (values: (number | null)[]) => {
+    const present = values.filter((v): v is number => v != null);
+    if (present.length === 0) return '';
+    let min = Math.min(...present);
+    let max = Math.max(...present);
+    if (max - min < 1e-9) { min -= 1; max += 1; }
+    const py = (v: number) => height - ((v - min) / (max - min)) * (height - 16) - 8;
+    let d = '';
+    let pen = false;
+    values.forEach((v, i) => {
+      if (v == null) { pen = false; return; }
+      d += `${pen ? 'L' : 'M'} ${px(i).toFixed(1)} ${py(v).toFixed(1)} `;
+      pen = true;
+    });
+    return d;
+  };
+
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three, marginBottom: Spacing.two }}>
+        {series.map((s) => (
+          <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: s.color }} />
+            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+              {s.label} <Text style={{ color: colors.text, fontWeight: '600' }}>{s.current}</Text>
+            </Text>
+          </View>
+        ))}
+      </View>
+      <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height }}>
+        {width > 0 && (
+          <Svg width={width} height={height}>
+            {series.map((s) => (
+              <Path key={s.label} d={pathFor(s.values)} stroke={s.color} strokeWidth={2} fill="none" />
+            ))}
+          </Svg>
+        )}
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{labels[0]}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{labels[n - 1]}</Text>
+      </View>
+    </View>
+  );
+}
+
 function EmptyChart({ height }: { height: number }) {
   const colors = useTheme();
   return (

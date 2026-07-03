@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
+  WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -106,5 +107,20 @@ assert.equal(top[0].best_weight, 60);
 const week = db.prepare(PERIOD_SUMMARY_SQL).get('2026-06-25');
 assert.equal(week.workouts, 1, 'only w2 since 06-25');
 assert.equal(week.tonnage_kg, 20 * 12 + 60 * 8 + 60 * 7);
+
+// --- trendline weekly series ---
+const wWeight = db.prepare(WEEKLY_WEIGHT_SQL).all('2026-06-01');
+assert.ok(wWeight.length >= 1);
+const wk26 = wWeight.find((r) => r.wk === '2026-25'); // week containing 2026-06-24..28
+assert.ok(wk26, 'weigh-ins grouped into an ISO-ish week');
+const wTon = db.prepare(WEEKLY_TONNAGE_SQL).all('2026-06-01');
+assert.equal(wTon.reduce((a, r) => a + r.value, 0),
+  50 * 10 + 55 * 8 + 20 * 12 + 60 * 8 + 60 * 7, 'tonnage includes completed warmups, excludes incomplete + active');
+const wKcal = db.prepare(WEEKLY_KCAL_SQL).all('2026-06-01');
+const kcalWk = wKcal.find((r) => r.wk === '2026-26');
+assert.equal(kcalWk.value, (1250 + 1900) / 2, 'avg of daily sums, not avg of entries');
+
+// --- PR detection ---
+assert.equal(db.prepare(BEST_WEIGHT_SQL).get('bench').best, 60, 'best excludes active workout (100kg) and warmups');
 
 console.log('test-db: all assertions passed');

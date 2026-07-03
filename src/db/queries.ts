@@ -2,12 +2,16 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { newId } from '../lib/id';
 import { nowIso } from '../lib/dates';
 import {
+  BEST_WEIGHT_SQL,
   CALORIE_DAYS_SQL,
   EXERCISE_PROGRESSION_SQL,
   MUSCLE_SETS_SQL,
   PERIOD_SUMMARY_SQL,
   PREV_SETS_SQL,
   TOP_EXERCISES_SQL,
+  WEEKLY_KCAL_SQL,
+  WEEKLY_TONNAGE_SQL,
+  WEEKLY_WEIGHT_SQL,
   WEIGHT_TREND_SQL,
   WORKOUT_HISTORY_SQL,
 } from './sql';
@@ -44,6 +48,7 @@ export type WorkoutExerciseDetail = {
   position: number;
   sets: WorkoutSet[];
   prev: PrevSet[];
+  best_weight: number | null;
 };
 
 export type Workout = {
@@ -156,9 +161,16 @@ export async function getWorkoutExercises(
     const sets = await db.getAllAsync<WorkoutSet>(
       'SELECT * FROM sets WHERE workout_exercise_id = ? ORDER BY position', r.id);
     const prev = await getPrevSets(db, r.exercise_id);
-    result.push({ ...r, sets, prev });
+    const best = await getBestWeight(db, r.exercise_id);
+    result.push({ ...r, sets, prev, best_weight: best });
   }
   return result;
+}
+
+export async function setWorkoutNotes(
+  db: SQLiteDatabase, workoutId: string, notes: string,
+): Promise<void> {
+  await db.runAsync('UPDATE workouts SET notes = ? WHERE id = ?', notes.trim() || null, workoutId);
 }
 
 export async function getPrevSets(db: SQLiteDatabase, exerciseId: string): Promise<PrevSet[]> {
@@ -383,6 +395,34 @@ export async function getTopExercises(db: SQLiteDatabase, limit = 10): Promise<T
 export async function getPeriodSummary(db: SQLiteDatabase, sinceIso: string): Promise<PeriodSummary> {
   const row = await db.getFirstAsync<PeriodSummary>(PERIOD_SUMMARY_SQL, sinceIso);
   return row ?? { workouts: 0, tonnage_kg: 0 };
+}
+
+export type WeeklyTrend = {
+  weeks: string[]; // '%Y-%W' keys, ascending
+  weight: (number | null)[];
+  tonnage: (number | null)[];
+  kcal: (number | null)[];
+};
+
+/** Join the three weekly series on the union of their week keys. */
+export async function getWeeklyTrend(db: SQLiteDatabase, sinceDate: string): Promise<WeeklyTrend> {
+  type Row = { wk: string; value: number };
+  const [w, t, k] = await Promise.all([
+    db.getAllAsync<Row>(WEEKLY_WEIGHT_SQL, sinceDate),
+    db.getAllAsync<Row>(WEEKLY_TONNAGE_SQL, sinceDate),
+    db.getAllAsync<Row>(WEEKLY_KCAL_SQL, sinceDate),
+  ]);
+  const weeks = [...new Set([...w, ...t, ...k].map((r) => r.wk))].sort();
+  const series = (rows: Row[]) => {
+    const m = new Map(rows.map((r) => [r.wk, r.value]));
+    return weeks.map((wk) => m.get(wk) ?? null);
+  };
+  return { weeks, weight: series(w), tonnage: series(t), kcal: series(k) };
+}
+
+export async function getBestWeight(db: SQLiteDatabase, exerciseId: string): Promise<number | null> {
+  const row = await db.getFirstAsync<{ best: number | null }>(BEST_WEIGHT_SQL, exerciseId);
+  return row?.best ?? null;
 }
 
 // ---------- export / import ----------

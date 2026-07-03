@@ -2,6 +2,13 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-04 — Session 2 (cont.): Trendline, PR flash, notes
+
+- **The Trendline shipped** (flagship): Stats top card, 12 weeks, three normalized lines — body weight (tint), weekly tonnage (green), avg daily kcal (orange). New WEEKLY_WEIGHT/TONNAGE/KCAL_SQL grouped by strftime('%Y-%W'), joined in JS over the union of week keys (getWeeklyTrend). TrendChart component handles per-series normalization + null gaps (pen up/down path building). Theme gained `accent` orange.
+- **PR flash**: BEST_WEIGHT_SQL (all-time best completed working weight, finished workouts only — tested it excludes the active workout). getWorkoutExercises now returns best_weight. Completing a working set above it → 🏆 instead of ✔ + success haptic. Transient until reload, by design.
+- **Workout notes**: multiline input on active workout (writes through on change), italic card in history detail.
+- All checks green. Committed + pushed.
+
 ## 2026-07-04 — Session 2: Phase 2 analytics + UX round
 
 Owner confirmed the app runs on device via Expo Go (SDK 57 from expo.dev/go) and asked for more features/better UI.

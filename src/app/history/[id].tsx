@@ -61,6 +61,13 @@ export default function WorkoutDetail() {
           {workout.finished_at ? ` · ${durationLabel(workout.started_at, workout.finished_at)}` : ''}
         </Text>
       )}
+      {workout?.notes ? (
+        <Card>
+          <Text style={{ color: colors.text, fontSize: 14, fontStyle: 'italic' }}>
+            {workout.notes}
+          </Text>
+        </Card>
+      ) : null}
       {routineName == null ? (
         <View style={{ flexDirection: 'row', gap: Spacing.two }}>
           <Button

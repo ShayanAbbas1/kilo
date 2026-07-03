@@ -36,8 +36,8 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 ## Phase 2 — Analytics (the reason Kilo exists)
 - [x] Stats tab: weight trend chart (90d, raw + 7-day avg lines, trend delta), sets per muscle group (7d/30d/365d, json_each over primary_muscles), calories vs target columns (14d), most-trained exercises list
 - [x] Per-exercise progression screen (`/exercise/[id]`): est. 1RM (Epley) / top weight / volume line chart with metric toggle, bests row, session list, how-to instructions. Linked from Stats, workout screen (tap name), history detail.
-- [ ] **The Trendline**: body weight + calories + strength on ONE combined timeline — still the flagship idea, not built
-- [ ] Personal records: auto-detected PR feed + "new PR" flash when a set beats history (bests-per-exercise already shown on exercise page)
+- [x] **The Trendline**: 12-week combined chart on Stats — body weight, weekly tonnage, avg daily kcal, each normalized to its own range (read the shapes)
+- [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic (PR history feed still open)
 - [ ] Tonnage per muscle group (sets done; tonnage variant pending)
 
 ## Phase 3 — Quality of life
@@ -50,7 +50,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [ ] Supersets
 - [ ] Plate calculator
 - [ ] RPE/RIR per set (optional field, off by default)
-- [ ] Notes on workouts and exercises
+- [x] Notes on workouts (multiline field on active workout, shown in history; per-exercise notes still open)
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher)
 - [x] Dark mode (system theme, all components themed)
 

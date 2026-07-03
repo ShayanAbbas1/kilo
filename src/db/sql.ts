@@ -189,6 +189,48 @@ LEFT JOIN sets s ON s.workout_exercise_id = we.id
 WHERE w.finished_at IS NOT NULL AND w.started_at >= ?;
 `;
 
+/**
+ * The Trendline inputs — one row per ISO week (%Y-%W): avg body weight,
+ * total tonnage, avg daily kcal. LEFT-join style union via three grouped
+ * subselects joined in JS (weeks can be missing per series).
+ * Params: since date (YYYY-MM-DD) — applied per series.
+ */
+export const WEEKLY_WEIGHT_SQL = `
+SELECT strftime('%Y-%W', date) AS wk, AVG(weight_kg) AS value
+FROM weigh_ins WHERE date >= ?
+GROUP BY wk ORDER BY wk;
+`;
+
+export const WEEKLY_TONNAGE_SQL = `
+SELECT strftime('%Y-%W', w.started_at) AS wk,
+  SUM(s.weight_kg * s.reps) AS value
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+WHERE s.completed = 1 AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+GROUP BY wk ORDER BY wk;
+`;
+
+export const WEEKLY_KCAL_SQL = `
+SELECT wk, AVG(day_kcal) AS value FROM (
+  SELECT strftime('%Y-%W', date) AS wk, date, SUM(kcal) AS day_kcal
+  FROM calorie_entries WHERE date >= ?
+  GROUP BY date
+)
+GROUP BY wk ORDER BY wk;
+`;
+
+/** Best completed working-set weight ever for an exercise (PR detection). Params: exercise_id */
+export const BEST_WEIGHT_SQL = `
+SELECT MAX(s.weight_kg) AS best
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+WHERE we.exercise_id = ? AND s.completed = 1 AND s.set_type != 'warmup'
+  AND w.finished_at IS NOT NULL;
+`;
+
 /** History list: finished workouts with set counts + tonnage. Params: limit */
 export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,

@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
   addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
-  getWorkoutExercises, removeWorkoutExercise, updateSet,
+  getWorkoutExercises, removeWorkoutExercise, setWorkoutNotes, updateSet,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
@@ -23,6 +23,7 @@ type VMSet = {
   completed: boolean;
   weightText: string;
   repsText: string;
+  pr?: boolean;
 };
 
 type VMExercise = {
@@ -30,6 +31,7 @@ type VMExercise = {
   exerciseId: string;
   name: string;
   prev: PrevSet[];
+  bestWeight: number | null;
   sets: VMSet[];
 };
 
@@ -45,8 +47,13 @@ export default function ActiveWorkoutScreen() {
   const [elapsedMin, setElapsedMin] = useState<number | null>(null);
   const [startedAt, setStartedAt] = useState<string | null>(null);
 
+  const [notes, setNotes] = useState('');
+
   useEffect(() => {
-    getWorkout(db, id).then((w) => setStartedAt(w?.started_at ?? null));
+    getWorkout(db, id).then((w) => {
+      setStartedAt(w?.started_at ?? null);
+      setNotes(w?.notes ?? '');
+    });
   }, [db, id]);
 
   // minute-granularity elapsed clock in the header
@@ -82,6 +89,7 @@ export default function ActiveWorkoutScreen() {
         exerciseId: r.exercise_id,
         name: r.name,
         prev: r.prev,
+        bestWeight: r.best_weight,
         sets: r.sets.map((s) => ({
           id: s.id,
           set_type: s.set_type,
@@ -134,10 +142,16 @@ export default function ActiveWorkoutScreen() {
         repsText = String(ghost.reps);
         updateSet(db, s.id, { reps: ghost.reps });
       }
-      patchSet(ex.weId, s.id, { completed: true, weightText, repsText });
+      // PR check: beat the all-time best working weight for this exercise
+      const kgNow = fromDisplayWeight(parseFloat(weightText.replace(',', '.')), unit);
+      const isPr =
+        s.set_type !== 'warmup' &&
+        ex.bestWeight != null && !isNaN(kgNow) && kgNow > ex.bestWeight;
+      patchSet(ex.weId, s.id, { completed: true, weightText, repsText, pr: isPr });
       updateSet(db, s.id, { completed: true });
       setRestLeft(restSec);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (isPr) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
       patchSet(ex.weId, s.id, { completed: false });
       updateSet(db, s.id, { completed: false });
@@ -301,7 +315,7 @@ export default function ActiveWorkoutScreen() {
                         fontSize: 18, textAlign: 'center',
                         color: s.completed ? colors.success : colors.textSecondary,
                       }}>
-                        {s.completed ? '✔' : '○'}
+                        {s.completed ? (s.pr ? '🏆' : '✔') : '○'}
                       </Text>
                     </Pressable>
                   </View>
@@ -320,6 +334,17 @@ export default function ActiveWorkoutScreen() {
         <Button
           title="+ Add Exercise"
           onPress={() => router.push({ pathname: '/exercise-picker', params: { workoutId: id } })}
+        />
+        <TextInput
+          style={{
+            borderRadius: 10, padding: Spacing.three, fontSize: 15, minHeight: 44,
+            color: colors.text, backgroundColor: colors.backgroundElement,
+          }}
+          value={notes}
+          onChangeText={(t) => { setNotes(t); setWorkoutNotes(db, id, t); }}
+          placeholder="Workout notes…"
+          placeholderTextColor={colors.textSecondary}
+          multiline
         />
         <Button title="Discard Workout" kind="danger" onPress={onDiscard} />
       </ScrollView>

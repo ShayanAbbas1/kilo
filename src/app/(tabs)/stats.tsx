@@ -3,13 +3,13 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { BarList, ColumnChart, LineChart, Point } from '@/components/charts';
+import { BarList, ColumnChart, LineChart, Point, TrendChart } from '@/components/charts';
 import { Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  CalorieDay, MuscleSetsRow, TopExerciseRow, WeightRow,
-  getCalorieDays, getMuscleSets, getTopExercises, getWeightTrend,
+  CalorieDay, MuscleSetsRow, TopExerciseRow, WeeklyTrend, WeightRow,
+  getCalorieDays, getMuscleSets, getTopExercises, getWeeklyTrend, getWeightTrend,
 } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight } from '@/lib/units';
@@ -30,6 +30,7 @@ export default function StatsTab() {
   const [muscles, setMuscles] = useState<MuscleSetsRow[]>([]);
   const [calories, setCalories] = useState<CalorieDay[]>([]);
   const [topExercises, setTopExercises] = useState<TopExerciseRow[]>([]);
+  const [trend, setTrend] = useState<WeeklyTrend | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +38,7 @@ export default function StatsTab() {
       getMuscleSets(db, daysAgoIso(RANGE_DAYS[range])).then(setMuscles);
       getCalorieDays(db, 14).then(setCalories);
       getTopExercises(db, 8).then(setTopExercises);
+      getWeeklyTrend(db, daysAgoIso(84).slice(0, 10)).then(setTrend);
     }, [db, range]),
   );
 
@@ -51,8 +53,41 @@ export default function StatsTab() {
   const weightDelta =
     weights.length >= 2 ? weights[0].avg7 - weights[weights.length - 1].avg7 : null;
 
+  const lastOf = (vals: (number | null)[]): number | null => {
+    for (let i = vals.length - 1; i >= 0; i--) if (vals[i] != null) return vals[i];
+    return null;
+  };
+
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
+      <SectionTitle>The Trendline — 12 weeks, is it working?</SectionTitle>
+      <Card>
+        {trend && (
+          <TrendChart
+            labels={trend.weeks.map((w) => `w${w.slice(5)}`)}
+            series={[
+              {
+                label: 'weight', color: colors.tint, values: trend.weight,
+                current: lastOf(trend.weight) != null
+                  ? `${formatWeight(lastOf(trend.weight)!, unit)} ${unit}` : '—',
+              },
+              {
+                label: 'lifted/wk', color: colors.success, values: trend.tonnage,
+                current: lastOf(trend.tonnage) != null
+                  ? `${formatWeight(lastOf(trend.tonnage)!, unit)} ${unit}` : '—',
+              },
+              {
+                label: 'kcal/day', color: colors.accent, values: trend.kcal,
+                current: lastOf(trend.kcal) != null ? `${Math.round(lastOf(trend.kcal)!)}` : '—',
+              },
+            ]}
+          />
+        )}
+        <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 6 }}>
+          Each line scaled to its own range — read the shapes: weight down, lifted steady = a good cut.
+        </Text>
+      </Card>
+
       <SectionTitle>
         Body weight — last 90 days
         {weightDelta != null
