@@ -208,6 +208,13 @@ export default function ActiveWorkoutScreen() {
     ]);
   };
 
+  const openPlates = (ex: VMExercise) => {
+    const lastWeighted = [...ex.sets].reverse().find((s) => s.weightText);
+    const w = lastWeighted?.weightText
+      ?? (ex.prev[0]?.weight_kg != null ? formatWeight(ex.prev[0].weight_kg, unit) : undefined);
+    router.push({ pathname: '/plates', params: w ? { w } : {} });
+  };
+
   // label: warmup 'W', failure 'F', working sets numbered 1..n
   const setLabel = (sets: VMSet[], idx: number): string => {
     const s = sets[idx];
@@ -252,13 +259,19 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled">
         {exercises.map((ex) => (
           <Card key={ex.weId} style={{ gap: Spacing.two }}>
-            <Pressable
-              onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
-              onLongPress={() => onRemoveExercise(ex)}>
-              <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>
-                {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
-              </Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Pressable
+                style={{ flex: 1 }}
+                onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
+                onLongPress={() => onRemoveExercise(ex)}>
+                <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>
+                  {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => openPlates(ex)} hitSlop={8}>
+                <Text style={{ fontSize: 18, color: colors.textSecondary }}>⚖</Text>
+              </Pressable>
+            </View>
             <View style={styles.headerRow}>
               <Text style={[styles.colSet, styles.colHead, { color: colors.textSecondary }]}>SET</Text>
               <Text style={[styles.colPrev, styles.colHead, { color: colors.textSecondary }]}>PREVIOUS</Text>

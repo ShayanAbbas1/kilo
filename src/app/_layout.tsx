@@ -22,6 +22,7 @@ export default function RootLayout() {
               options={{ presentation: 'modal', title: 'Add Exercise' }}
             />
             <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
+            <Stack.Screen name="plates" options={{ presentation: 'modal', title: 'Plates' }} />
           </Stack>
         </SettingsProvider>
       </SQLiteProvider>

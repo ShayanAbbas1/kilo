@@ -38,7 +38,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Per-exercise progression screen (`/exercise/[id]`): est. 1RM (Epley) / top weight / volume line chart with metric toggle, bests row, session list, how-to instructions. Linked from Stats, workout screen (tap name), history detail.
 - [x] **The Trendline**: 12-week combined chart on Stats — body weight, weekly tonnage, avg daily kcal, each normalized to its own range (read the shapes)
 - [x] PR flash: completing a working set above the all-time best weight shows 🏆 + success haptic (PR history feed still open)
-- [ ] Tonnage per muscle group (sets done; tonnage variant pending)
+- [x] Tonnage per muscle group: Sets/Tonnage toggle on Stats' muscle-group card (heatmap + bar list) and the muscle drill-down's weekly chart, display-unit converted
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested. Head-level *aggregation* (sets per head per week) still open.
 
@@ -50,7 +50,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Edit a finished workout (reopen from history detail)
 - [x] Weekly summary (workouts + tonnage) on Workout tab
 - [ ] Supersets
-- [ ] Plate calculator
+- [x] Plate calculator (`/plates` modal: per-side breakdown from a target weight, greedy from standard plate sets; ⚖ button on each exercise in the active workout, prefilled from last logged/ghost weight)
 - [ ] RPE/RIR per set (optional field, off by default)
 - [x] Notes on workouts (multiline field on active workout, shown in history; per-exercise notes still open)
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher)
