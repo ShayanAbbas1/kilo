@@ -4,7 +4,9 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { BarList, ColumnChart, LineChart, Point, TrendChart } from '@/components/charts';
+import { BodyHeatmap } from '@/components/body-heatmap';
 import { Card, SectionTitle } from '@/components/ui';
+import { HEAT_COLORS, toBodyData } from '@/lib/body-map';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -118,6 +120,14 @@ export default function StatsTab() {
               </Text>
             </Pressable>
           ))}
+        </View>
+        <BodyHeatmap data={toBodyData(muscles)} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>fewer sets</Text>
+          {HEAT_COLORS.map((c) => (
+            <View key={c} style={{ width: 14, height: 8, borderRadius: 2, backgroundColor: c }} />
+          ))}
+          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>more</Text>
         </View>
         <BarList data={muscles.map((m) => ({ label: m.muscle, value: m.sets }))} />
       </Card>

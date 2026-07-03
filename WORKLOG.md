@@ -2,6 +2,17 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-04 — Session 2 (cont. 2): body heatmap + muscle-head granularity
+
+Owner asked for body visualizations and head-level targeting ("long head or short head").
+
+- Dep: react-native-body-highlighter (SVG body, works with our react-native-svg; slugs in its index.d.ts). `src/lib/body-map.ts` maps free-exercise-db muscle names → slugs (lats+middle back both → upper-back and SUM; abductors → gluteal, ponytail-commented), toBodyData() scales sets → intensity 1..5 against the busiest muscle, HEAT_COLORS pale→red.
+- Stats muscle card now: front+back BodyHeatmap + heat legend + the BarList, all driven by the same 7d/30d/365d toggle.
+- `src/lib/muscle-heads.ts`: regex rules per muscle inferring head/region emphasis from exercise NAME (seed data has no head info; hand-tagging 873 exercises is not happening). Covers chest (incline/decline/fly), biceps (preacher/incline/hammer), triceps (overhead/pushdown/close-grip), delts (lateral/front/rear/press), lats (width vs thickness), hams (hinge vs curl), quads, calves (seated=soleus), glutes, traps. Shown as "◎ emphasis" lines on the exercise page under a Targets card with a mini body map (primary=full tint, secondary=40% tint).
+- IMPORTANT for node tests: body-map.ts uses `import type` so node type-stripping keeps it runtime-free — a value import of the CJS package breaks scripts/test-heads.mjs.
+- `npm test` now runs both test files (21 head/body assertions + DB suite). All checks green incl. bundle.
+- Head-level aggregation (weekly sets per head) deliberately deferred — needs per-set emphasis tagging; the display layer proves the concept first.
+
 ## 2026-07-04 — Session 2 (cont.): Trendline, PR flash, notes
 
 - **The Trendline shipped** (flagship): Stats top card, 12 weeks, three normalized lines — body weight (tint), weekly tonnage (green), avg daily kcal (orange). New WEEKLY_WEIGHT/TONNAGE/KCAL_SQL grouped by strftime('%Y-%W'), joined in JS over the union of week keys (getWeeklyTrend). TrendChart component handles per-series normalization + null gaps (pen up/down path building). Theme gained `accent` orange.

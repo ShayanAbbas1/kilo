@@ -4,13 +4,20 @@ import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { LineChart, Point } from '@/components/charts';
+import { BodyHeatmap } from '@/components/body-heatmap';
 import { Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Exercise, ProgressionRow, getExercise, getExerciseProgression } from '@/db/queries';
+import { MUSCLE_TO_SLUG } from '@/lib/body-map';
+import { muscleEmphasis } from '@/lib/muscle-heads';
 import { useSettings } from '@/lib/settings-context';
 import { formatDay } from '@/lib/dates';
 import { formatWeight } from '@/lib/units';
+
+function parseMuscles(json: string): string[] {
+  try { return JSON.parse(json) as string[]; } catch { return []; }
+}
 
 type Metric = 'est1rm' | 'top_weight' | 'volume';
 const METRIC_LABEL: Record<Metric, string> = {
@@ -42,6 +49,16 @@ export default function ExerciseDetail() {
   const best1rm = rows.length ? Math.max(...rows.map((r) => r.est1rm)) : null;
   const bestVolume = rows.length ? Math.max(...rows.map((r) => r.volume)) : null;
 
+  const primary = exercise ? parseMuscles(exercise.primary_muscles) : [];
+  const secondary = exercise ? parseMuscles(exercise.secondary_muscles) : [];
+  const emphasis = exercise ? muscleEmphasis(exercise.name, primary) : [];
+  const bodyData = [
+    ...primary.map((m) => MUSCLE_TO_SLUG[m]).filter(Boolean)
+      .map((slug) => ({ slug, intensity: 2 })),
+    ...secondary.map((m) => MUSCLE_TO_SLUG[m]).filter(Boolean)
+      .map((slug) => ({ slug, intensity: 1 })),
+  ];
+
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
       <Stack.Screen options={{ title: exercise?.name ?? 'Exercise' }} />
@@ -51,6 +68,22 @@ export default function ExerciseDetail() {
         <Stat label="Est. 1RM" value={best1rm != null ? fmt(best1rm) : '—'} />
         <Stat label="Best session" value={bestVolume != null ? fmt(bestVolume) : '—'} />
       </View>
+
+      <SectionTitle>Targets</SectionTitle>
+      <Card style={{ gap: Spacing.two }}>
+        <BodyHeatmap data={bodyData} colors={[colors.tint + '66', colors.tint]} scale={0.65} />
+        <Text style={{ color: colors.text, fontSize: 14 }}>
+          <Text style={{ fontWeight: '600' }}>Primary: </Text>{primary.join(', ') || '—'}
+          {secondary.length > 0 && (
+            <Text style={{ color: colors.textSecondary }}>   ·   Secondary: {secondary.join(', ')}</Text>
+          )}
+        </Text>
+        {emphasis.map((e) => (
+          <Text key={e} style={{ color: colors.tint, fontSize: 13, fontWeight: '600' }}>
+            ◎ {e}
+          </Text>
+        ))}
+      </Card>
 
       <SectionTitle>Progression</SectionTitle>
       <Card style={{ gap: Spacing.three }}>
