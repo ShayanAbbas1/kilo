@@ -12,6 +12,7 @@ import {
   PERIOD_SUMMARY_SQL,
   PREV_SETS_SQL,
   PR_HISTORY_SQL,
+  RECENT_EXERCISES_SQL,
   TOP_EXERCISES_SQL,
   WEEKLY_KCAL_SQL,
   WEEKLY_TONNAGE_SQL,
@@ -110,17 +111,20 @@ export async function setSetting(db: SQLiteDatabase, key: string, value: string)
 // ---------- exercises ----------
 
 export async function searchExercises(
-  db: SQLiteDatabase, query: string, muscle?: string,
+  db: SQLiteDatabase, query: string, muscle?: string, equipment?: string,
 ): Promise<Exercise[]> {
-  const q = `%${query.trim()}%`;
-  if (muscle) {
-    return db.getAllAsync<Exercise>(
-      `SELECT * FROM exercises WHERE name LIKE ? AND primary_muscles LIKE ?
-       ORDER BY is_custom DESC, name LIMIT 100`,
-      q, `%"${muscle}"%`);
-  }
+  const clauses = ['name LIKE ?'];
+  const params: string[] = [`%${query.trim()}%`];
+  if (muscle) { clauses.push('primary_muscles LIKE ?'); params.push(`%"${muscle}"%`); }
+  if (equipment) { clauses.push('equipment = ?'); params.push(equipment); }
   return db.getAllAsync<Exercise>(
-    `SELECT * FROM exercises WHERE name LIKE ? ORDER BY is_custom DESC, name LIMIT 100`, q);
+    `SELECT * FROM exercises WHERE ${clauses.join(' AND ')} ORDER BY is_custom DESC, name LIMIT 100`,
+    ...params);
+}
+
+/** Distinct exercises by most recent use across any workout (active included). */
+export async function getRecentExercises(db: SQLiteDatabase, limit = 8): Promise<Exercise[]> {
+  return db.getAllAsync<Exercise>(RECENT_EXERCISES_SQL, limit);
 }
 
 export async function getExercise(db: SQLiteDatabase, id: string): Promise<Exercise | null> {

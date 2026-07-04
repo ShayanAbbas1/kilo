@@ -9,7 +9,7 @@ import { Button } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  Exercise, addExerciseToWorkout, createCustomExercise, searchExercises,
+  Exercise, addExerciseToWorkout, createCustomExercise, getRecentExercises, searchExercises,
 } from '@/db/queries';
 
 const MUSCLES = [
@@ -25,14 +25,20 @@ export default function ExercisePicker() {
   const colors = useTheme();
   const [query, setQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
+  const [equipmentFilter, setEquipmentFilter] = useState<string | null>(null);
   const [results, setResults] = useState<Exercise[]>([]);
+  const [recent, setRecent] = useState<Exercise[]>([]);
   const [creating, setCreating] = useState(false);
   const [newMuscle, setNewMuscle] = useState(MUSCLES[0]);
   const [newEquipment, setNewEquipment] = useState(EQUIPMENT[0]);
 
   useEffect(() => {
-    searchExercises(db, query, muscleFilter ?? undefined).then(setResults);
-  }, [db, query, muscleFilter]);
+    getRecentExercises(db).then(setRecent);
+  }, [db]);
+
+  useEffect(() => {
+    searchExercises(db, query, muscleFilter ?? undefined, equipmentFilter ?? undefined).then(setResults);
+  }, [db, query, muscleFilter, equipmentFilter]);
 
   const pick = async (exerciseId: string) => {
     await addExerciseToWorkout(db, workoutId, exerciseId);
@@ -53,6 +59,18 @@ export default function ExercisePicker() {
       return '';
     }
   };
+
+  // Recent-first list: only when the search is otherwise unconstrained (spec: filters skip Recent).
+  const showRecent = !creating && !query.trim() && !muscleFilter && !equipmentFilter && recent.length > 0;
+  const recentIds = new Set(recent.map((r) => r.id));
+  const rest = results.filter((r) => !recentIds.has(r.id));
+  type Row = Exercise & { section?: string };
+  const listData: Row[] = showRecent
+    ? [
+        ...recent.map((r, i): Row => (i === 0 ? { ...r, section: 'RECENT' } : r)),
+        ...rest.map((r, i): Row => (i === 0 ? { ...r, section: 'ALL' } : r)),
+      ]
+    : results;
 
   return (
     <View style={{ flex: 1 }}>
@@ -82,6 +100,22 @@ export default function ExercisePicker() {
           ))}
         </ScrollView>
       )}
+      {!creating && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.two }}>
+          {EQUIPMENT.map((eq) => (
+            <Chip
+              key={eq}
+              label={eq}
+              selected={eq === equipmentFilter}
+              onPress={() => setEquipmentFilter(equipmentFilter === eq ? null : eq)}
+            />
+          ))}
+        </ScrollView>
+      )}
       {creating ? (
         <View style={{ padding: Spacing.three, gap: Spacing.three }}>
           <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>
@@ -103,24 +137,29 @@ export default function ExercisePicker() {
         </View>
       ) : (
         <FlatList
-          data={results}
+          data={listData}
           keyExtractor={(e) => e.id}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => pick(item.id)}
-              style={({ pressed }) => [
-                styles.row,
-                { borderBottomColor: colors.backgroundElement },
-                pressed && { backgroundColor: colors.backgroundElement },
-              ]}>
-              <Text style={{ color: colors.text, fontSize: 16 }}>
-                {item.name}{item.is_custom ? ' ★' : ''}
-              </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-                {muscles(item)} · {item.equipment}
-              </Text>
-            </Pressable>
+            <>
+              {item.section && (
+                <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>{item.section}</Text>
+              )}
+              <Pressable
+                onPress={() => pick(item.id)}
+                style={({ pressed }) => [
+                  styles.row,
+                  { borderBottomColor: colors.backgroundElement },
+                  pressed && { backgroundColor: colors.backgroundElement },
+                ]}>
+                <Text style={{ color: colors.text, fontSize: 16 }}>
+                  {item.name}{item.is_custom ? ' ★' : ''}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                  {muscles(item)} · {item.equipment}
+                </Text>
+              </Pressable>
+            </>
           )}
           ListFooterComponent={
             query.trim() ? (
@@ -161,4 +200,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, gap: 2,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  sectionHeader: {
+    fontSize: 12, fontWeight: '600', letterSpacing: 0.5,
+    paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: 4,
+  },
 });
