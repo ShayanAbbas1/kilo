@@ -5,7 +5,7 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { Button, Card, SectionTitle } from '@/components/ui';
+import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -135,26 +135,30 @@ export default function BodyTab() {
                   },
                 ])
               }
-              style={styles.entryRow}>
+              style={({ pressed }) => [styles.entryRow, pressed && { backgroundColor: colors.backgroundSelected }]}>
               <Text style={{ color: colors.text }}>{e.label ?? 'Entry'}</Text>
-              <Text style={{ color: colors.textSecondary }}>
+              <Text style={{ color: colors.textSecondary, fontVariant: ['tabular-nums'] }}>
                 {e.kcal} kcal{e.protein_g != null ? ` · ${e.protein_g}g` : ''}
               </Text>
             </Pressable>
           ))}
           {entries.length === 0 && (
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Log meals separately or one daily total — your call.
-            </Text>
+            <EmptyState
+              icon="🍽️"
+              title="No meals logged"
+              hint="Log meals separately or one daily total — your call."
+            />
           )}
         </Card>
 
         <SectionTitle>Weight trend</SectionTitle>
         <Card style={{ gap: 6 }}>
           {trend.length === 0 && (
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              Weigh in daily — the 7-day average smooths out the water-weight noise.
-            </Text>
+            <EmptyState
+              icon="⚖️"
+              title="No weigh-ins yet"
+              hint="Weigh in daily — the 7-day average smooths out the water-weight noise."
+            />
           )}
           {trend.map((r) => (
             <Pressable
@@ -168,12 +172,14 @@ export default function BodyTab() {
                   },
                 ])
               }
-              style={styles.entryRow}>
-              <Text style={{ color: colors.text, width: 110 }}>{formatDay(r.date)}</Text>
-              <Text style={{ color: colors.text, fontWeight: '600' }}>
+              style={({ pressed }) => [styles.entryRow, pressed && { backgroundColor: colors.backgroundSelected }]}>
+              <Text style={{ color: colors.text, width: 110, fontVariant: ['tabular-nums'] }}>
+                {formatDay(r.date)}
+              </Text>
+              <Text style={{ color: colors.text, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
                 {weightLabel(r.weight_kg, unit)}
               </Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
                 avg {formatWeight(r.avg7, unit)}
               </Text>
             </Pressable>

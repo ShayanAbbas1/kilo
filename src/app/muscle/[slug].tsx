@@ -4,7 +4,7 @@ import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { BarList, ColumnChart } from '@/components/charts';
-import { Card, SectionTitle } from '@/components/ui';
+import { Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -69,10 +69,11 @@ export default function MuscleDetail() {
             <Pressable
               key={m}
               onPress={() => setMetric(m)}
-              style={{
+              style={({ pressed }) => ({
                 paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
-              }}>
+                opacity: pressed ? 0.7 : 1,
+              })}>
               <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {m === 'sets' ? 'Sets' : 'Tonnage'}
               </Text>
@@ -97,10 +98,11 @@ export default function MuscleDetail() {
                 <Pressable
                   key={h.head}
                   onPress={() => setSelectedHead(h.head)}
-                  style={{
+                  style={({ pressed }) => ({
                     paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
                     backgroundColor: activeHead?.head === h.head ? colors.tint : colors.backgroundSelected,
-                  }}>
+                    opacity: pressed ? 0.7 : 1,
+                  })}>
                   <Text style={{
                     color: activeHead?.head === h.head ? '#fff' : colors.text,
                     fontWeight: '600', fontSize: 12,
@@ -127,9 +129,7 @@ export default function MuscleDetail() {
       <SectionTitle>Trained with</SectionTitle>
       <Card style={{ gap: 2 }}>
         {exercises.length === 0 && (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-            Nothing logged for {title} in the last {WEEKS} weeks.
-          </Text>
+          <EmptyState icon="💪" title="Nothing logged" hint={`for ${title} in the last ${WEEKS} weeks.`} />
         )}
         {exercises.map((e) => (
           <Pressable
@@ -145,7 +145,7 @@ export default function MuscleDetail() {
             <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>
               {e.name}
             </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{e.sets} sets  ›</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>{e.sets} sets  ›</Text>
           </Pressable>
         ))}
       </Card>

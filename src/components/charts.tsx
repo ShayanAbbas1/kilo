@@ -45,8 +45,10 @@ export function LineChart({
   return (
     <View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{formatValue(max)}</Text>
-        <Text style={{ color: colors.text, fontSize: 13, fontWeight: '700' }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {formatValue(max)}
+        </Text>
+        <Text style={{ color: colors.text, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
           {formatValue(last.value)}
         </Text>
       </View>
@@ -68,9 +70,15 @@ export function LineChart({
         )}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{data[0].label}</Text>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{formatValue(min)}</Text>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{last.label}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {data[0].label}
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {formatValue(min)}
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {last.label}
+        </Text>
       </View>
     </View>
   );
@@ -99,7 +107,11 @@ export function BarList({
               height: '100%', borderRadius: 4, backgroundColor: colors.tint,
             }} />
           </View>
-          <Text style={{ color: colors.textSecondary, fontSize: 13, width: 44, textAlign: 'right' }}>
+          <Text
+            style={{
+              color: colors.textSecondary, fontSize: 13, width: 44, textAlign: 'right',
+              fontVariant: ['tabular-nums'],
+            }}>
             {formatValue(d.value)}
           </Text>
         </View>
@@ -145,13 +157,15 @@ export function ColumnChart({
         ))}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{data[0].label}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {data[0].label}
+        </Text>
         {target != null && (
-          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
             target {formatValue(target)}
           </Text>
         )}
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
           {data[data.length - 1].label}
         </Text>
       </View>
@@ -209,7 +223,10 @@ export function TrendChart({
           <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: s.color }} />
             <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-              {s.label} <Text style={{ color: colors.text, fontWeight: '600' }}>{s.current}</Text>
+              {s.label}{' '}
+              <Text style={{ color: colors.text, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
+                {s.current}
+              </Text>
             </Text>
           </View>
         ))}
@@ -224,8 +241,12 @@ export function TrendChart({
         )}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{labels[0]}</Text>
-        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{labels[n - 1]}</Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {labels[0]}
+        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 11, fontVariant: ['tabular-nums'] }}>
+          {labels[n - 1]}
+        </Text>
       </View>
     </View>
   );

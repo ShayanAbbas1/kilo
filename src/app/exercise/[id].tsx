@@ -92,10 +92,11 @@ export default function ExerciseDetail() {
             <Pressable
               key={m}
               onPress={() => setMetric(m)}
-              style={{
+              style={({ pressed }) => ({
                 flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
-              }}>
+                opacity: pressed ? 0.7 : 1,
+              })}>
               <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {METRIC_LABEL[m]}
               </Text>
@@ -115,10 +116,10 @@ export default function ExerciseDetail() {
         {[...rows].reverse().map((r) => (
           <View key={r.day} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: colors.text, width: 110 }}>{formatDay(r.day)}</Text>
-            <Text style={{ color: colors.text, fontWeight: '600' }}>
+            <Text style={{ color: colors.text, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
               {fmt(r.top_weight)} {unit}
             </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
               vol {fmt(r.volume)}
             </Text>
           </View>
@@ -143,7 +144,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   const colors = useTheme();
   return (
     <Card style={{ flex: 1, alignItems: 'center', paddingVertical: 10 }}>
-      <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}>{value}</Text>
+      <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{value}</Text>
       <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{label}</Text>
     </Card>
   );

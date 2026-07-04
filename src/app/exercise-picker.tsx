@@ -165,7 +165,9 @@ export default function ExercisePicker() {
           )}
           ListFooterComponent={
             query.trim() ? (
-              <Pressable onPress={() => setCreating(true)} style={styles.row}>
+              <Pressable
+                onPress={() => setCreating(true)}
+                style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.backgroundElement }]}>
                 <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>
                   + Create “{query.trim()}”
                 </Text>
@@ -183,10 +185,11 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
   return (
     <Pressable
       onPress={onPress}
-      style={{
+      style={({ pressed }) => ({
         paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
         backgroundColor: selected ? colors.tint : colors.backgroundElement,
-      }}>
+        opacity: pressed ? 0.7 : 1,
+      })}>
       <Text style={{ color: selected ? '#fff' : colors.text, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );

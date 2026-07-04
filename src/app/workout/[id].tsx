@@ -236,7 +236,8 @@ export default function ActiveWorkoutScreen() {
         onPress: async () => {
           clearRestNotif();
           const kept = await finishWorkout(db, id);
-          if (!kept) Alert.alert('Nothing logged', 'Empty workout was discarded.');
+          if (kept) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          else Alert.alert('Nothing logged', 'Empty workout was discarded.');
           router.dismissTo('/(tabs)');
         },
       },
@@ -299,7 +300,7 @@ export default function ActiveWorkoutScreen() {
         options={{
           title: elapsedMin != null && elapsedMin > 0 ? `Workout · ${elapsedMin}m` : 'Workout',
           headerRight: () => (
-            <Pressable onPress={onFinish} hitSlop={8}>
+            <Pressable onPress={onFinish} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>Finish</Text>
             </Pressable>
           ),
@@ -313,10 +314,14 @@ export default function ActiveWorkoutScreen() {
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <Pressable
               onPress={() => { setRestLeft((l) => (l ?? 0) + 15); rearmRestNotif((restLeft ?? 0) + 15); }}
-              hitSlop={8}>
+              hitSlop={8}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
             </Pressable>
-            <Pressable onPress={() => { setRestLeft(null); clearRestNotif(); }} hitSlop={8}>
+            <Pressable
+              onPress={() => { setRestLeft(null); clearRestNotif(); }}
+              hitSlop={8}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
             </Pressable>
           </View>
@@ -337,7 +342,7 @@ export default function ActiveWorkoutScreen() {
             }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable
-                style={{ flex: 1 }}
+                style={({ pressed }) => [{ flex: 1 }, { opacity: pressed ? 0.5 : 1 }]}
                 onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
                 onLongPress={() => onRemoveExercise(ex)}>
                 <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>
@@ -346,11 +351,17 @@ export default function ActiveWorkoutScreen() {
               </Pressable>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
                 {!isLast && (
-                  <Pressable onPress={() => onToggleSuperset(ex)} hitSlop={8}>
+                  <Pressable
+                    onPress={() => onToggleSuperset(ex)}
+                    hitSlop={8}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                     <Text style={{ fontSize: 18, color: ex.supersetWithNext ? colors.tint : colors.textSecondary }}>⛓</Text>
                   </Pressable>
                 )}
-                <Pressable onPress={() => openPlates(ex)} hitSlop={8}>
+                <Pressable
+                  onPress={() => openPlates(ex)}
+                  hitSlop={8}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                   <Text style={{ fontSize: 18, color: colors.textSecondary }}>⚖</Text>
                 </Pressable>
               </View>
@@ -374,7 +385,10 @@ export default function ActiveWorkoutScreen() {
                       styles.setRow,
                       s.completed && { backgroundColor: colors.successBg, borderRadius: 8 },
                     ]}>
-                    <Pressable style={styles.colSet} onPress={() => onCycleType(ex, s)} hitSlop={8}>
+                    <Pressable
+                      style={({ pressed }) => [styles.colSet, { opacity: pressed ? 0.5 : 1 }]}
+                      onPress={() => onCycleType(ex, s)}
+                      hitSlop={8}>
                       <Text style={{
                         color: s.set_type === 'failure' ? colors.danger
                           : s.set_type === 'warmup' ? colors.textSecondary : colors.text,
@@ -383,7 +397,9 @@ export default function ActiveWorkoutScreen() {
                         {setLabel(ex.sets, idx)}
                       </Text>
                     </Pressable>
-                    <Text style={[styles.colPrev, { color: colors.textSecondary }]} numberOfLines={1}>
+                    <Text
+                      style={[styles.colPrev, { color: colors.textSecondary, fontVariant: ['tabular-nums'] }]}
+                      numberOfLines={1}>
                       {ghost && ghost.weight_kg != null
                         ? `${weightLabel(ghost.weight_kg, unit)} × ${ghost.reps ?? '—'}`
                         : '—'}
@@ -420,7 +436,7 @@ export default function ActiveWorkoutScreen() {
                       />
                     )}
                     <Pressable
-                      style={styles.colCheck}
+                      style={({ pressed }) => [styles.colCheck, { opacity: pressed ? 0.5 : 1 }]}
                       onPress={() => onToggleComplete(ex, s, idx)}
                       hitSlop={8}>
                       <Text style={{
@@ -519,6 +535,6 @@ const styles = StyleSheet.create({
   colCheck: { width: 32 },
   input: {
     borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8,
-    fontSize: 16, fontWeight: '600', textAlign: 'center',
+    fontSize: 16, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'],
   },
 });

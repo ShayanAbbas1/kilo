@@ -41,17 +41,19 @@ export default function PlatesScreen() {
       />
 
       <Card style={{ gap: Spacing.two }}>
-        <Text style={{ color: colors.textSecondary }}>Bar {bar} {unit}</Text>
+        <Text style={{ color: colors.textSecondary, fontVariant: ['tabular-nums'] }}>Bar {bar} {unit}</Text>
         {!isNaN(target) && plates.length === 0 && (
           <Text style={{ color: colors.text }}>Nothing to load — bar only.</Text>
         )}
         {groups.map((g) => (
-          <Text key={g.size} style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>
+          <Text
+            key={g.size}
+            style={{ color: colors.text, fontSize: 18, fontWeight: '600', fontVariant: ['tabular-nums'] }}>
             {g.size} × {g.count}
           </Text>
         ))}
         {remainder > 0 && (
-          <Text style={{ color: colors.danger }}>
+          <Text style={{ color: colors.danger, fontVariant: ['tabular-nums'] }}>
             {remainder} {unit} per side not loadable
           </Text>
         )}

@@ -5,7 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 
 import { BarList, ColumnChart, LineChart, Point, TrendChart } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
-import { Card, SectionTitle } from '@/components/ui';
+import { Card, EmptyState, SectionTitle } from '@/components/ui';
 import { HEAT_COLORS, toBodyData } from '@/lib/body-map';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -116,10 +116,11 @@ export default function StatsTab() {
             <Pressable
               key={r}
               onPress={() => setRange(r)}
-              style={{
+              style={({ pressed }) => ({
                 flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
                 backgroundColor: range === r ? colors.tint : colors.backgroundSelected,
-              }}>
+                opacity: pressed ? 0.7 : 1,
+              })}>
               <Text style={{ color: range === r ? '#fff' : colors.text, fontWeight: '600', fontSize: 13 }}>
                 {r === 'week' ? '7d' : r === 'month' ? '30d' : '365d'}
               </Text>
@@ -131,10 +132,11 @@ export default function StatsTab() {
             <Pressable
               key={m}
               onPress={() => setMuscleMetric(m)}
-              style={{
+              style={({ pressed }) => ({
                 paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
                 backgroundColor: muscleMetric === m ? colors.tint : colors.backgroundSelected,
-              }}>
+                opacity: pressed ? 0.7 : 1,
+              })}>
               <Text style={{
                 color: muscleMetric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12,
               }}>
@@ -172,9 +174,7 @@ export default function StatsTab() {
       <SectionTitle>Recent PRs</SectionTitle>
       <Card style={{ gap: 2 }}>
         {prs.length === 0 && (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-            Beat a previous best weight to see it here.
-          </Text>
+          <EmptyState icon="🏆" title="No PRs yet" hint="Beat a previous best weight to see it here." />
         )}
         {prs.map((pr, i) => (
           <Pressable
@@ -187,11 +187,13 @@ export default function StatsTab() {
               },
               pressed && { backgroundColor: colors.backgroundSelected },
             ]}>
-            <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>
+            <Text
+              style={{ color: colors.text, fontSize: 15, flex: 1, fontVariant: ['tabular-nums'] }}
+              numberOfLines={1}>
               🏆 {pr.exercise_name} — {weightLabel(pr.weight_kg, unit)} × {pr.reps}
             </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-              {formatDateTime(pr.started_at)}
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+              {formatDateTime(pr.started_at)}{'  ›'}
             </Text>
           </Pressable>
         ))}
@@ -205,9 +207,11 @@ export default function StatsTab() {
       <SectionTitle>Exercises</SectionTitle>
       <Card style={{ gap: 2 }}>
         {topExercises.length === 0 && (
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-            Finish workouts to see per-exercise progression here.
-          </Text>
+          <EmptyState
+            icon="📊"
+            title="No exercises yet"
+            hint="Finish workouts to see per-exercise progression here."
+          />
         )}
         {topExercises.map((e) => (
           <Pressable
@@ -223,7 +227,7 @@ export default function StatsTab() {
             <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>
               {e.name}
             </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
               {e.sessions}× · best {e.best_weight != null ? `${formatWeight(e.best_weight, unit)} ${unit}` : '—'}{'  ›'}
             </Text>
           </Pressable>

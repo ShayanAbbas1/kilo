@@ -77,7 +77,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: Spacing.three }}>
+    <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
       <SectionTitle>Units</SectionTitle>
       <Card style={{ flexDirection: 'row', gap: Spacing.two }}>
         {(['kg', 'lbs'] as Unit[]).map((u) => (
