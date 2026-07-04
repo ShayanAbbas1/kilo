@@ -54,6 +54,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Plate calculator (`/plates` modal: per-side breakdown from a target weight, greedy from standard plate sets; ⚖ button on each exercise in the active workout, prefilled from last logged/ghost weight)
 - [x] RPE/RIR per set (RPE 0–10, optional field per set, shown when enabled in settings; always shown in history if present)
 - [x] Notes on workouts (multiline field on active workout, shown in history) + per-exercise notes (below each exercise's sets, shown in history)
+- [x] Training calendar with month grid, weekly streaks (current/longest), tap-day filtering
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher) (needs a dev build — Expo Go can't register launcher widgets; deferred until off Expo Go)
 - [x] Dark mode (system theme, all components themed)
 

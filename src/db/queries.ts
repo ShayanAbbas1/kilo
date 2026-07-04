@@ -302,6 +302,13 @@ export async function getHistory(db: SQLiteDatabase, limit = 100): Promise<Histo
   return db.getAllAsync<HistoryRow>(WORKOUT_HISTORY_SQL, limit);
 }
 
+export type WorkoutDay = { id: string; name: string | null; started_at: string };
+
+export async function getWorkoutDates(db: SQLiteDatabase): Promise<WorkoutDay[]> {
+  return db.getAllAsync<WorkoutDay>(
+    'SELECT id, name, started_at FROM workouts WHERE finished_at IS NOT NULL ORDER BY started_at DESC');
+}
+
 // ---------- routines ----------
 
 export type RoutineRow = {
