@@ -2,6 +2,18 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-04 — Session 3: orchestrated wave (calendar, picker, heads, routines, polish)
+
+PM/architect/implementer pipeline: a Fable architect wrote per-feature specs (scratchpad), sonnet implementers built each in isolated git worktrees off main while another session shipped RPE/notification/supersets in parallel; orchestrator merged, resolved conflicts, verified, pushed.
+
+- **Training calendar + weekly streaks** (History): `src/lib/calendar.ts` pure grid/streak math (monthGrid, weekKey, weekStreaks — weekly not daily; a rest day doesn't break a lifter's streak), tested in `scripts/test-calendar.mjs` (wired into npm test). History ListHeader: month grid w/ dots on training days, today ring, tap-day filter + Clear row, `🔥 N-week streak · best M` (shown when ≥2). UTC→local via todayStr(new Date(started_at)).
+- **Picker UX**: RECENT_EXERCISES_SQL (distinct by last use, active workouts count for recency), Recent section only when query+filters empty; equipment chips ANDed with muscle chips (searchExercises gained equipment param).
+- **Head-level weekly aggregation**: MUSCLE_EXERCISE_WEEKLY_SQL + aggregateHeads() in muscle-heads.ts (SQL can't run the name regexes; JS maps exercise→emphasis and sums per week). Muscle drill-down gained a "By head/region" card (chips + ColumnChart + BarList). NOTE: sets for an exercise with 2 primary muscles in one slug group count once per muscle — consistent with the heatmap's deliberate SUM semantic, left as is.
+- **Routine editor** (`/routine/[id]`): + New Routine on Workout tab, long-press routine → Edit/Delete; rename (write-through), −/+ target-sets stepper, ▲▼ reorder via position swap, add via shared exercise-picker (optional routineId param), superset chain borders preserved through reorder. Routine CRUD/reorder covered in test-db.mjs.
+- **Beauty pass**: shared EmptyState component used on 7 screens, pressed states added to ~30 Pressables, paddingBottom rhythm normalized, tabular-nums on all numeric text/charts, success haptic on Finish.
+- **Merge notes**: append-conflicts in sql.ts/queries.ts/test-db.mjs resolved by union (PR_HISTORY_SQL from main + RECENT_EXERCISES_SQL from branch, etc). Worktree gotchas for next time: symlinked node_modules shares Metro's cache across worktrees — `expo export` can fail resolving a *sibling worktree's* modules; always `--clear`. Stale `.expo/types` in a fresh checkout fails tsc after merging a branch that added a route; any running dev server on that checkout regenerates it.
+- All checks green on main after every merge: tsc, expo lint, npm test (4 suites), expo export android.
+
 ## 2026-07-04 — Session 2 (cont. 2): body heatmap + muscle-head granularity
 
 Owner asked for body visualizations and head-level targeting ("long head or short head").
