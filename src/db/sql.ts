@@ -231,6 +231,21 @@ WHERE we.exercise_id = ? AND s.completed = 1 AND s.set_type != 'warmup'
   AND w.finished_at IS NOT NULL;
 `;
 
+/**
+ * Distinct exercises by most recent use in any workout (active workouts included
+ * deliberately — "what I picked five minutes ago" is the top recency signal).
+ * Params: limit
+ */
+export const RECENT_EXERCISES_SQL = `
+SELECT e.*, MAX(w.started_at) AS last_used
+FROM workout_exercises we
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id
+GROUP BY e.id
+ORDER BY last_used DESC
+LIMIT ?;
+`;
+
 /** History list: finished workouts with set counts + tonnage. Params: limit */
 export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,

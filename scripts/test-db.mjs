@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
-  WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL,
+  WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -122,5 +122,12 @@ assert.equal(kcalWk.value, (1250 + 1900) / 2, 'avg of daily sums, not avg of ent
 
 // --- PR detection ---
 assert.equal(db.prepare(BEST_WEIGHT_SQL).get('bench').best, 60, 'best excludes active workout (100kg) and warmups');
+
+// --- recent exercises: distinct by most recent use, active workouts count ---
+const recentEx = db.prepare(RECENT_EXERCISES_SQL).all(10);
+assert.equal(recentEx.length, 1, 'bench used across w1/w2/w3 dedupes to one row; squat never used');
+assert.equal(recentEx[0].id, 'bench', 'bench is the only exercise with workout history');
+assert.equal(recentEx[0].last_used, '2026-07-01T10:00:00Z',
+  'most recent use is w3, the active workout — active workouts count for recency');
 
 console.log('test-db: all assertions passed');

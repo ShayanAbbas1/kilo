@@ -44,7 +44,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 
 ## Phase 3 — Quality of life
 - [x] Elapsed-time in workout header, haptic on set completion
-- [x] Muscle-group filter chips in exercise picker
+- [x] Muscle-group + equipment filter chips (AND'd) in exercise picker, with a Recent section (last-used exercises, active workouts count) shown when search/filters are empty
 - [x] Protein per calorie entry + daily protein total
 - [x] Weigh-in delta vs 7-day average (▲▼) on Body tab
 - [x] Edit a finished workout (reopen from history detail)
