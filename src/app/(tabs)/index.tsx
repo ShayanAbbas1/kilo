@@ -8,7 +8,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   PeriodSummary, RoutineRow, Workout,
-  deleteRoutine, getActiveWorkout, getPeriodSummary, listRoutines,
+  createRoutine, deleteRoutine, getActiveWorkout, getPeriodSummary, listRoutines,
   startWorkout, startWorkoutFromRoutine,
 } from '@/db/queries';
 import { formatDateTime } from '@/lib/dates';
@@ -53,14 +53,20 @@ export default function WorkoutTab() {
     router.push(`/workout/${id}`);
   };
 
-  const onDeleteRoutine = (r: RoutineRow) => {
-    Alert.alert(`Delete routine “${r.name}”?`, undefined, [
-      { text: 'Cancel', style: 'cancel' },
+  const onRoutineLongPress = (r: RoutineRow) => {
+    Alert.alert(r.name, undefined, [
+      { text: 'Edit', onPress: () => router.push(`/routine/${r.id}`) },
       {
         text: 'Delete', style: 'destructive',
         onPress: () => deleteRoutine(db, r.id).then(() => listRoutines(db).then(setRoutines)),
       },
+      { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  const onNewRoutine = async () => {
+    const id = await createRoutine(db, 'New Routine');
+    router.push(`/routine/${id}`);
   };
 
   return (
@@ -92,7 +98,8 @@ export default function WorkoutTab() {
               <Button title="Start Empty Workout" onPress={start} />
             </>
           )}
-          {routines.length > 0 && <SectionTitle>Routines</SectionTitle>}
+          <SectionTitle>Routines</SectionTitle>
+          <Button title="+ New Routine" kind="secondary" onPress={onNewRoutine} />
         </View>
       }
       ListEmptyComponent={
@@ -103,7 +110,7 @@ export default function WorkoutTab() {
       renderItem={({ item }) => (
         <Pressable
           onPress={() => startFromRoutine(item)}
-          onLongPress={() => onDeleteRoutine(item)}
+          onLongPress={() => onRoutineLongPress(item)}
           style={({ pressed }) => [
             styles.routineCard,
             { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },

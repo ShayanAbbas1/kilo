@@ -9,7 +9,8 @@ import { Button } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  Exercise, addExerciseToWorkout, createCustomExercise, getRecentExercises, searchExercises,
+  Exercise, addExerciseToWorkout, addRoutineExercise, createCustomExercise, getRecentExercises,
+  searchExercises,
 } from '@/db/queries';
 
 const MUSCLES = [
@@ -20,7 +21,7 @@ const MUSCLES = [
 const EQUIPMENT = ['barbell', 'dumbbell', 'machine', 'cable', 'kettlebells', 'body only', 'bands', 'other'];
 
 export default function ExercisePicker() {
-  const { workoutId } = useLocalSearchParams<{ workoutId: string }>();
+  const { workoutId, routineId } = useLocalSearchParams<{ workoutId: string; routineId: string }>();
   const db = useSQLiteContext();
   const colors = useTheme();
   const [query, setQuery] = useState('');
@@ -41,7 +42,8 @@ export default function ExercisePicker() {
   }, [db, query, muscleFilter, equipmentFilter]);
 
   const pick = async (exerciseId: string) => {
-    await addExerciseToWorkout(db, workoutId, exerciseId);
+    if (routineId) await addRoutineExercise(db, routineId, exerciseId);
+    else await addExerciseToWorkout(db, workoutId, exerciseId);
     router.back();
   };
 

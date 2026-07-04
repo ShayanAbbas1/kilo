@@ -169,6 +169,52 @@ assert.equal(
   db.prepare('SELECT superset_with_next FROM routine_exercises WHERE id = ?').get('re1').superset_with_next,
   1, 'superset flag survives the routine round-trip');
 
+// --- routine editor: create + add exercises (positions increment) ---
+db.exec(`INSERT INTO routines (id, name) VALUES ('rEdit', 'Push Day');`);
+const nextRoutinePos = (routineId) => db.prepare(
+  'SELECT COALESCE(MAX(position), 0) + 1 AS p FROM routine_exercises WHERE routine_id = ?',
+).get(routineId).p;
+const addRoutineEx = (id, exId, targetSets = 3) => db.prepare(
+  `INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets)
+   VALUES (?, 'rEdit', ?, ?, ?)`,
+).run(id, exId, nextRoutinePos('rEdit'), targetSets);
+addRoutineEx('re-bench', 'bench');
+addRoutineEx('re-squat', 'squat');
+const listRoutineEx = (routineId) => db.prepare(
+  `SELECT re.id, re.exercise_id, re.position, re.target_sets
+   FROM routine_exercises re WHERE re.routine_id = ? ORDER BY re.position`,
+).all(routineId);
+let rex = listRoutineEx('rEdit');
+assert.deepEqual(rex.map((r) => r.exercise_id), ['bench', 'squat'], 'positions increment in insertion order');
+assert.deepEqual(rex.map((r) => r.position), [1, 2]);
+
+// --- routine editor: swap swaps positions, listRoutineExercises order follows ---
+const swapRoutineEx = (idA, idB) => {
+  const a = db.prepare('SELECT position FROM routine_exercises WHERE id = ?').get(idA);
+  const b = db.prepare('SELECT position FROM routine_exercises WHERE id = ?').get(idB);
+  db.prepare('UPDATE routine_exercises SET position = ? WHERE id = ?').run(b.position, idA);
+  db.prepare('UPDATE routine_exercises SET position = ? WHERE id = ?').run(a.position, idB);
+};
+swapRoutineEx('re-bench', 're-squat');
+rex = listRoutineEx('rEdit');
+assert.deepEqual(rex.map((r) => r.exercise_id), ['squat', 'bench'], 'swap flips listRoutineExercises order');
+
+// --- routine editor: removeRoutineExercise leaves the other row intact ---
+db.prepare('DELETE FROM routine_exercises WHERE id = ?').run('re-squat');
+rex = listRoutineEx('rEdit');
+assert.deepEqual(rex.map((r) => r.exercise_id), ['bench'], 'remove leaves the other exercise intact');
+
+// --- startWorkoutFromRoutine still honors edited target_sets ---
+// addExerciseToWorkout takes Math.max(minSets, prev.length, 1); edited target_sets (5) beats
+// bench's 3-set previous session (see PREV_SETS_SQL fixture above).
+db.prepare('UPDATE routine_exercises SET target_sets = 5 WHERE id = ?').run('re-bench');
+const editedTargetSets = db.prepare(
+  'SELECT target_sets FROM routine_exercises WHERE id = ?',
+).get('re-bench').target_sets;
+const prevForBench = db.prepare(PREV_SETS_SQL).all('bench', 'bench');
+const nSetsFromRoutine = Math.max(editedTargetSets, prevForBench.length, 1);
+assert.equal(nSetsFromRoutine, 5, 'edited target_sets (5) wins over prev session length (3)');
+
 // --- migration: v1 -> current ALTERs applied to a v1-shaped DB match a fresh SCHEMA_SQL install ---
 const oldDb = new DatabaseSync(':memory:');
 oldDb.exec(`
