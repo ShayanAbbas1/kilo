@@ -1,5 +1,11 @@
 # Welcome to your Expo app 👋
 
+## Builds
+
+All builds: https://expo.dev/accounts/shayanabbas/projects/kilo/builds
+
+- 2026-07-04 — first standalone Android APK (preview profile): https://expo.dev/accounts/shayanabbas/projects/kilo/builds/17ddeaaa-ce9c-49ce-be7f-c3fac081ad62
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
