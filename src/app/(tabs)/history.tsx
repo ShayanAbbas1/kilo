@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -6,7 +6,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { HistoryRow, WorkoutDay, getHistory, getWorkoutDates } from '@/db/queries';
+import { HistoryRow, WorkoutDay, getHistory, getHistoryForDay, getWorkoutDates } from '@/db/queries';
 import { monthGrid, weekStreaks } from '@/lib/calendar';
 import { durationLabel, formatDay, formatDateTime, todayStr } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
@@ -23,6 +23,7 @@ export default function HistoryTab() {
   const colors = useTheme();
   const { unit } = useSettings();
   const [rows, setRows] = useState<HistoryRow[]>([]);
+  const [dayRows, setDayRows] = useState<HistoryRow[]>([]);
   const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
   const [viewMonth, setViewMonth] = useState(() => {
     const d = new Date();
@@ -33,7 +34,12 @@ export default function HistoryTab() {
   useFocusEffect(
     useCallback(() => {
       getHistory(db).then(setRows);
-      getWorkoutDates(db).then(setWorkoutDays);
+      getWorkoutDates(db).then((days) => {
+        setWorkoutDays(days);
+        // Deleting a day's only workout leaves a dangling filter — clear it once the day is gone.
+        setSelectedDay((cur) =>
+          cur && !days.some((d) => todayStr(new Date(d.started_at)) === cur) ? null : cur);
+      });
     }, [db]),
   );
 
@@ -47,6 +53,12 @@ export default function HistoryTab() {
     return m;
   }, [workoutDays]);
 
+  // Tapped day's workouts fetched directly (not filtered from the 100-row history window,
+  // which would show empty for days older than the 100 most recent workouts).
+  useEffect(() => {
+    if (selectedDay) getHistoryForDay(db, selectedDay).then(setDayRows);
+  }, [db, selectedDay, workoutDays]);
+
   const streak = useMemo(
     () => weekStreaks(new Set(daysMap.keys()), todayStr()),
     [daysMap],
@@ -58,9 +70,7 @@ export default function HistoryTab() {
   );
 
   const today = todayStr();
-  const data = selectedDay
-    ? rows.filter((r) => todayStr(new Date(r.started_at)) === selectedDay)
-    : rows;
+  const data = selectedDay ? dayRows : rows;
 
   const prevMonth = () => setViewMonth(({ year, month }) =>
     month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 });

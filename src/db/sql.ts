@@ -149,7 +149,7 @@ LIMIT ?;
  * Params: exercise_id
  */
 export const EXERCISE_PROGRESSION_SQL = `
-SELECT date(w.started_at) AS day,
+SELECT date(w.started_at, 'localtime') AS day,
   MAX(s.weight_kg) AS top_weight,
   MAX(s.weight_kg * (1 + s.reps / 30.0)) AS est1rm,
   SUM(s.weight_kg * s.reps) AS volume
@@ -219,13 +219,13 @@ GROUP BY wk ORDER BY wk;
 `;
 
 export const WEEKLY_TONNAGE_SQL = `
-SELECT strftime('%Y-%W', w.started_at) AS wk,
+SELECT strftime('%Y-%W', w.started_at, 'localtime') AS wk,
   SUM(s.weight_kg * s.reps) AS value
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
 WHERE s.completed = 1 AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
-  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') >= ?
 GROUP BY wk ORDER BY wk;
 `;
 
@@ -243,7 +243,7 @@ GROUP BY wk ORDER BY wk;
  * Params: muscles as a JSON array string, since date
  */
 export const MUSCLE_WEEKLY_SETS_SQL = `
-SELECT strftime('%Y-%W', w.started_at) AS wk, COUNT(*) AS sets,
+SELECT strftime('%Y-%W', w.started_at, 'localtime') AS wk, COUNT(*) AS sets,
   COALESCE(SUM(s.weight_kg * s.reps), 0) AS tonnage
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
@@ -251,7 +251,7 @@ JOIN workouts w ON w.id = we.workout_id
 JOIN exercises e ON e.id = we.exercise_id,
   json_each(e.primary_muscles) je
 WHERE s.completed = 1 AND s.set_type != 'warmup'
-  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') >= ?
   AND je.value IN (SELECT value FROM json_each(?))
 GROUP BY wk ORDER BY wk;
 `;
@@ -268,7 +268,7 @@ JOIN workouts w ON w.id = we.workout_id
 JOIN exercises e ON e.id = we.exercise_id,
   json_each(e.primary_muscles) je
 WHERE s.completed = 1 AND s.set_type != 'warmup'
-  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') >= ?
   AND je.value IN (SELECT value FROM json_each(?))
 GROUP BY e.id
 ORDER BY sets DESC;
@@ -281,7 +281,7 @@ ORDER BY sets DESC;
  * Params: since date, muscles JSON array string
  */
 export const MUSCLE_EXERCISE_WEEKLY_SQL = `
-SELECT strftime('%Y-%W', w.started_at) AS wk, e.name AS exercise_name,
+SELECT strftime('%Y-%W', w.started_at, 'localtime') AS wk, e.name AS exercise_name,
   e.primary_muscles AS primary_muscles, COUNT(*) AS sets
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
@@ -289,7 +289,7 @@ JOIN workouts w ON w.id = we.workout_id
 JOIN exercises e ON e.id = we.exercise_id,
   json_each(e.primary_muscles) je
 WHERE s.completed = 1 AND s.set_type != 'warmup'
-  AND w.finished_at IS NOT NULL AND date(w.started_at) >= ?
+  AND w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') >= ?
   AND je.value IN (SELECT value FROM json_each(?))
 GROUP BY wk, e.id ORDER BY wk;
 `;
@@ -360,4 +360,22 @@ WHERE w.finished_at IS NOT NULL
 GROUP BY w.id
 ORDER BY w.started_at DESC
 LIMIT ?;
+`;
+
+/**
+ * History for one local calendar day — same shape as WORKOUT_HISTORY_SQL but
+ * filtered by day instead of a global LIMIT, so a tapped calendar day always
+ * shows its workouts even past the 100-row history window. Param: local day YYYY-MM-DD.
+ */
+export const WORKOUT_HISTORY_DAY_SQL = `
+SELECT w.id, w.name, w.started_at, w.finished_at,
+  COUNT(DISTINCT we.exercise_id) AS exercise_count,
+  SUM(CASE WHEN s.completed = 1 AND s.set_type != 'warmup' THEN 1 ELSE 0 END) AS set_count,
+  SUM(CASE WHEN s.completed = 1 THEN COALESCE(s.weight_kg,0) * COALESCE(s.reps,0) ELSE 0 END) AS tonnage_kg
+FROM workouts w
+LEFT JOIN workout_exercises we ON we.workout_id = w.id
+LEFT JOIN sets s ON s.workout_exercise_id = we.id
+WHERE w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') = ?
+GROUP BY w.id
+ORDER BY w.started_at DESC;
 `;

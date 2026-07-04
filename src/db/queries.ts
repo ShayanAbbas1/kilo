@@ -2,6 +2,7 @@ import { SQLiteDatabase } from 'expo-sqlite';
 import { newId } from '../lib/id';
 import { nowIso } from '../lib/dates';
 import {
+  SCHEMA_VERSION,
   BEST_WEIGHT_SQL,
   CALORIE_DAYS_SQL,
   EXERCISE_PROGRESSION_SQL,
@@ -19,6 +20,7 @@ import {
   WEEKLY_WEIGHT_SQL,
   WEIGHT_TREND_SQL,
   WORKOUT_HISTORY_SQL,
+  WORKOUT_HISTORY_DAY_SQL,
 } from './sql';
 
 // ---------- types ----------
@@ -264,6 +266,8 @@ export async function deleteSet(db: SQLiteDatabase, setId: string): Promise<void
   await db.runAsync('DELETE FROM sets WHERE id = ?', setId);
 }
 
+const reopenStashKey = (workoutId: string) => `reopened_finished_at:${workoutId}`;
+
 /**
  * Finish: drop incomplete sets and empty exercises; if nothing was completed,
  * delete the workout entirely. Returns true if the workout was kept.
@@ -278,15 +282,24 @@ export async function finishWorkout(db: SQLiteDatabase, workoutId: string): Prom
   const any = await db.getFirstAsync<{ n: number }>(
     `SELECT COUNT(*) AS n FROM workout_exercises WHERE workout_id = ?`, workoutId);
   if (!any || any.n === 0) {
+    await db.runAsync('DELETE FROM settings WHERE key = ?', reopenStashKey(workoutId));
     await db.runAsync('DELETE FROM workouts WHERE id = ?', workoutId);
     return false;
   }
-  await db.runAsync('UPDATE workouts SET finished_at = ? WHERE id = ?', nowIso(), workoutId);
+  // ponytail: if this workout was reopened, restore its original finish time instead of
+  // stamping "now" — editing a typo on an old session must not rewrite its date.
+  const stashed = await getSetting(db, reopenStashKey(workoutId));
+  await db.runAsync('UPDATE workouts SET finished_at = ? WHERE id = ?', stashed ?? nowIso(), workoutId);
+  if (stashed) await db.runAsync('DELETE FROM settings WHERE key = ?', reopenStashKey(workoutId));
   return true;
 }
 
 /** Reopen a finished workout for editing — it becomes the active workout again. */
 export async function reopenWorkout(db: SQLiteDatabase, workoutId: string): Promise<void> {
+  // ponytail: stash the original finished_at so re-finishing restores it (see finishWorkout).
+  const w = await db.getFirstAsync<{ finished_at: string | null }>(
+    'SELECT finished_at FROM workouts WHERE id = ?', workoutId);
+  if (w?.finished_at) await setSetting(db, reopenStashKey(workoutId), w.finished_at);
   await db.runAsync('UPDATE workouts SET finished_at = NULL WHERE id = ?', workoutId);
 }
 
@@ -295,6 +308,7 @@ export async function discardWorkout(db: SQLiteDatabase, workoutId: string): Pro
     `DELETE FROM sets WHERE workout_exercise_id IN
      (SELECT id FROM workout_exercises WHERE workout_id = ?)`, workoutId);
   await db.runAsync('DELETE FROM workout_exercises WHERE workout_id = ?', workoutId);
+  await db.runAsync('DELETE FROM settings WHERE key = ?', reopenStashKey(workoutId));
   await db.runAsync('DELETE FROM workouts WHERE id = ?', workoutId);
 }
 
@@ -304,6 +318,11 @@ export async function deleteWorkout(db: SQLiteDatabase, workoutId: string): Prom
 
 export async function getHistory(db: SQLiteDatabase, limit = 100): Promise<HistoryRow[]> {
   return db.getAllAsync<HistoryRow>(WORKOUT_HISTORY_SQL, limit);
+}
+
+/** Finished workouts on one local calendar day (YYYY-MM-DD) — for the calendar tap-day list. */
+export async function getHistoryForDay(db: SQLiteDatabase, day: string): Promise<HistoryRow[]> {
+  return db.getAllAsync<HistoryRow>(WORKOUT_HISTORY_DAY_SQL, day);
 }
 
 export type WorkoutDay = { id: string; name: string | null; started_at: string };
@@ -592,7 +611,7 @@ const EXPORT_TABLES = [
 ] as const;
 
 export async function exportAll(db: SQLiteDatabase): Promise<string> {
-  const out: Record<string, unknown> = { app: 'kilo', exported_at: nowIso(), schema_version: 1 };
+  const out: Record<string, unknown> = { app: 'kilo', exported_at: nowIso(), schema_version: SCHEMA_VERSION };
   for (const t of EXPORT_TABLES) {
     out[t] = await db.getAllAsync(`SELECT * FROM ${t}`);
   }
