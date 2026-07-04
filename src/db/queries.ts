@@ -334,6 +334,82 @@ export async function listRoutines(db: SQLiteDatabase): Promise<RoutineRow[]> {
      ORDER BY r.position, r.name`);
 }
 
+export type RoutineExerciseRow = {
+  id: string;
+  exercise_id: string;
+  name: string;
+  position: number;
+  target_sets: number;
+  superset_with_next: number;
+};
+
+export async function createRoutine(db: SQLiteDatabase, name: string): Promise<string> {
+  const id = newId();
+  await db.runAsync('INSERT INTO routines (id, name, position) VALUES (?, ?, 0)', id, name.trim());
+  return id;
+}
+
+export async function renameRoutine(db: SQLiteDatabase, id: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return; // keep previous name, same guard style as setWorkoutNotes
+  await db.runAsync('UPDATE routines SET name = ? WHERE id = ?', trimmed, id);
+}
+
+export async function getRoutine(
+  db: SQLiteDatabase, id: string,
+): Promise<{ id: string; name: string } | null> {
+  return db.getFirstAsync<{ id: string; name: string }>(
+    'SELECT id, name FROM routines WHERE id = ?', id);
+}
+
+export async function listRoutineExercises(
+  db: SQLiteDatabase, routineId: string,
+): Promise<RoutineExerciseRow[]> {
+  return db.getAllAsync<RoutineExerciseRow>(
+    `SELECT re.id, re.exercise_id, re.position, re.target_sets, re.superset_with_next, e.name
+     FROM routine_exercises re JOIN exercises e ON e.id = re.exercise_id
+     WHERE re.routine_id = ? ORDER BY re.position`, routineId);
+}
+
+export async function addRoutineExercise(
+  db: SQLiteDatabase, routineId: string, exerciseId: string, targetSets = 3,
+): Promise<void> {
+  const pos = await db.getFirstAsync<{ p: number }>(
+    'SELECT COALESCE(MAX(position), 0) + 1 AS p FROM routine_exercises WHERE routine_id = ?', routineId);
+  await db.runAsync(
+    'INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets) VALUES (?, ?, ?, ?, ?)',
+    newId(), routineId, exerciseId, pos?.p ?? 1, targetSets);
+}
+
+export async function removeRoutineExercise(db: SQLiteDatabase, reId: string): Promise<void> {
+  // ponytail: same as removeWorkoutExercise — deleting a mid-chain exercise leaves the
+  // prev exercise's superset flag pointing at whatever is now next. Chain just re-links.
+  await db.runAsync('DELETE FROM routine_exercises WHERE id = ?', reId);
+}
+
+export async function setRoutineTargetSets(
+  db: SQLiteDatabase, reId: string, n: number,
+): Promise<void> {
+  await db.runAsync('UPDATE routine_exercises SET target_sets = ? WHERE id = ?', Math.max(1, n), reId);
+}
+
+/** Swap two rows' positions in one transaction — the ▲▼ reorder primitive, no drag-drop dep.
+ * superset_with_next stays keyed to the row id, so a swap that splits a ⛓ pair just re-links
+ * it to whichever exercise now follows — same simplest-correct behavior as workout reordering. */
+export async function swapRoutineExercises(
+  db: SQLiteDatabase, reIdA: string, reIdB: string,
+): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    const a = await db.getFirstAsync<{ position: number }>(
+      'SELECT position FROM routine_exercises WHERE id = ?', reIdA);
+    const b = await db.getFirstAsync<{ position: number }>(
+      'SELECT position FROM routine_exercises WHERE id = ?', reIdB);
+    if (!a || !b) return;
+    await db.runAsync('UPDATE routine_exercises SET position = ? WHERE id = ?', b.position, reIdA);
+    await db.runAsync('UPDATE routine_exercises SET position = ? WHERE id = ?', a.position, reIdB);
+  });
+}
+
 export async function createRoutineFromWorkout(
   db: SQLiteDatabase, workoutId: string, name: string,
 ): Promise<string> {
