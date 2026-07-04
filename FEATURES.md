@@ -49,6 +49,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Weigh-in delta vs 7-day average (▲▼) on Body tab
 - [x] Edit a finished workout (reopen from history detail)
 - [x] Weekly summary (workouts + tonnage) on Workout tab
+- [x] Training calendar with month grid, weekly streaks (current/longest), tap-day filtering
 - [ ] Supersets
 - [ ] Plate calculator
 - [ ] RPE/RIR per set (optional field, off by default)
