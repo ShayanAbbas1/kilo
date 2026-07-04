@@ -87,6 +87,10 @@ export default function ActiveWorkoutScreen() {
     cancelRestDone(restNotifId.current);
     restNotifId.current = null;
   }, []);
+  // cancel any pending rest notification on unmount (e.g. back-swipe out of the workout).
+  // clearRestNotif is stable ([] deps), so this runs cleanup only on unmount, not re-renders;
+  // Finish/Discard already clear it and a double-clear is a harmless no-op.
+  useEffect(() => clearRestNotif, [clearRestNotif]);
 
   useEffect(() => {
     getSetting(db, 'rest_seconds').then((v) => {
@@ -191,6 +195,8 @@ export default function ActiveWorkoutScreen() {
         s.set_type !== 'warmup' &&
         ex.bestWeight != null && !isNaN(kgNow) && kgNow > ex.bestWeight;
       patchSet(ex.weId, s.id, { completed: true, weightText, repsText, pr: isPr });
+      // raise the in-memory best so a later set in the same session doesn't re-fire the 🏆
+      if (isPr) patchExercise(ex.weId, { bestWeight: kgNow });
       updateSet(db, s.id, { completed: true });
       // supersets: no rest mid-chain — go straight to the paired exercise (Strong behavior)
       if (!ex.supersetWithNext) {
@@ -379,15 +385,18 @@ export default function ActiveWorkoutScreen() {
             {ex.sets.map((s, idx) => {
               const ghost = ex.prev[idx];
               return (
-                <Pressable key={s.id} onLongPress={() => onDeleteSet(s)}>
                   <View
+                    key={s.id}
                     style={[
                       styles.setRow,
                       s.completed && { backgroundColor: colors.successBg, borderRadius: 8 },
                     ]}>
+                    {/* long-press to delete lives on the set label only — inside the
+                        weight/reps inputs it would clash with text selection */}
                     <Pressable
                       style={({ pressed }) => [styles.colSet, { opacity: pressed ? 0.5 : 1 }]}
                       onPress={() => onCycleType(ex, s)}
+                      onLongPress={() => onDeleteSet(s)}
                       hitSlop={8}>
                       <Text style={{
                         color: s.set_type === 'failure' ? colors.danger
@@ -447,7 +456,6 @@ export default function ActiveWorkoutScreen() {
                       </Text>
                     </Pressable>
                   </View>
-                </Pressable>
               );
             })}
             <Button

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
+  WORKOUT_HISTORY_DAY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
   MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL, MIGRATION_V3_SQL,
@@ -91,6 +92,27 @@ assert.equal(prog[0].day, '2026-06-20');
 assert.equal(prog[0].top_weight, 55);
 assert.ok(Math.abs(prog[0].est1rm - 55 * (1 + 8 / 30)) < 1e-9, 'Epley est 1RM');
 assert.equal(prog[1].volume, 60 * 8 + 60 * 7, 'working-set volume only, warmups excluded');
+
+// --- local-day bucketing: SQL date(...,'localtime') must match JS local day ---
+// started_at is a UTC 'Z' timestamp; the calendar buckets by LOCAL day in JS, so the
+// analytics SQL must too. Expected value is computed with local getters here, so this
+// asserts JS/SQL consistency independent of the machine's timezone.
+const jsLocalDay = (iso) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+for (const iso of ['2026-06-20T10:00:00Z', '2026-06-20T23:30:00Z', '2026-06-21T02:15:00Z']) {
+  const sqlDay = db.prepare("SELECT date(?, 'localtime') AS d").get(iso).d;
+  assert.equal(sqlDay, jsLocalDay(iso), `SQL local day matches JS local day for ${iso}`);
+}
+assert.equal(prog[0].day, jsLocalDay('2026-06-20T10:00:00Z'), 'progression day is the local day');
+
+// --- calendar tap-day query: one day's finished workouts, filtered by local day ---
+const dayHist = db.prepare(WORKOUT_HISTORY_DAY_SQL).all(jsLocalDay('2026-06-27T10:00:00Z'));
+assert.equal(dayHist.length, 1, 'exactly the workouts on that local day');
+assert.equal(dayHist[0].id, 'w2');
+assert.equal(db.prepare(WORKOUT_HISTORY_DAY_SQL).all(jsLocalDay('2026-07-01T10:00:00Z')).length, 0,
+  'active (unfinished) workout excluded from the day list');
 
 // --- analytics: sets per muscle via json_each (warmups excluded) ---
 const muscles = db.prepare(MUSCLE_SETS_SQL).all('2026-06-01');
