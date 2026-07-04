@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { Card } from '@/components/ui';
+import { Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { HistoryRow, WorkoutDay, getHistory, getWorkoutDates } from '@/db/queries';
@@ -71,18 +71,18 @@ export default function HistoryTab() {
     <FlatList
       data={data}
       keyExtractor={(r) => r.id}
-      contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two }}
+      contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.six }}
       ListHeaderComponent={
         <View style={{ marginBottom: Spacing.two, gap: Spacing.two }}>
           <Card style={{ gap: Spacing.two }}>
             <View style={styles.monthRow}>
-              <Pressable onPress={prevMonth} hitSlop={8}>
+              <Pressable onPress={prevMonth} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                 <Text style={{ color: colors.tint, fontSize: 20 }}>‹</Text>
               </Pressable>
               <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
                 {MONTH_NAMES[viewMonth.month]} {viewMonth.year}
               </Text>
-              <Pressable onPress={nextMonth} hitSlop={8}>
+              <Pressable onPress={nextMonth} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                 <Text style={{ color: colors.tint, fontSize: 20 }}>›</Text>
               </Pressable>
             </View>
@@ -103,7 +103,7 @@ export default function HistoryTab() {
                       key={j}
                       disabled={!has}
                       onPress={() => setSelectedDay(isSelected ? null : day)}
-                      style={styles.dayCell}>
+                      style={({ pressed }) => [styles.dayCell, has && { opacity: pressed ? 0.5 : 1 }]}>
                       <View
                         style={[
                           styles.dayCircle,
@@ -123,13 +123,15 @@ export default function HistoryTab() {
               </View>
             ))}
             {streak.current >= 2 && (
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
                 🔥 {streak.current}-week streak · best {streak.longest}
               </Text>
             )}
           </Card>
           {selectedDay && (
-            <Pressable onPress={() => setSelectedDay(null)}>
+            <Pressable
+              onPress={() => setSelectedDay(null)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
                 Showing {formatDay(selectedDay)} — Clear
               </Text>
@@ -138,9 +140,9 @@ export default function HistoryTab() {
         </View>
       }
       ListEmptyComponent={
-        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: Spacing.six }}>
-          No workouts yet. Finish one and it shows up here.
-        </Text>
+        <View style={{ marginTop: Spacing.six }}>
+          <EmptyState icon="🏋️" title="No workouts yet" hint="Start one on the Workout tab." />
+        </View>
       }
       renderItem={({ item }) => (
         <Pressable
@@ -152,7 +154,7 @@ export default function HistoryTab() {
           <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
             {item.name ?? formatDateTime(item.started_at)}
           </Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+          <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
             {durationLabel(item.started_at, item.finished_at)} · {item.exercise_count} exercises ·{' '}
             {item.set_count} sets · {weightLabel(item.tonnage_kg, unit)}
           </Text>

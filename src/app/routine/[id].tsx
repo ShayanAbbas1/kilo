@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { Button, Card } from '@/components/ui';
+import { Button, Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -52,7 +52,7 @@ export default function RoutineEditorScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three }}>
+    <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six }}>
       <Stack.Screen options={{ title: name || 'Routine' }} />
       <TextInput
         style={[styles.nameInput, { color: colors.text, backgroundColor: colors.backgroundElement }]}
@@ -61,6 +61,9 @@ export default function RoutineEditorScreen() {
         placeholder="Routine name"
         placeholderTextColor={colors.textSecondary}
       />
+      {exercises.length === 0 && (
+        <EmptyState icon="➕" title="No exercises yet" hint="Add one below to build this routine." />
+      )}
       {exercises.map((ex, i) => {
         const isLast = i === exercises.length - 1;
         // a flag on the last row is harmless in the DB but has nothing to link to — skip it in display
@@ -76,28 +79,41 @@ export default function RoutineEditorScreen() {
             }}>
             <Pressable
               onPress={() => router.push(`/exercise/${ex.exercise_id}`)}
-              onLongPress={() => onRemove(ex)}>
+              onLongPress={() => onRemove(ex)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>{ex.name}</Text>
             </Pressable>
             <View style={styles.row}>
               <Text style={{ color: colors.textSecondary }}>Target sets</Text>
               <View style={styles.stepper}>
-                <Pressable onPress={() => onSets(ex, -1)} hitSlop={8}>
+                <Pressable
+                  onPress={() => onSets(ex, -1)}
+                  hitSlop={8}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                   <Text style={{ color: colors.tint, fontSize: 20, fontWeight: '700' }}>−</Text>
                 </Pressable>
                 <Text style={[styles.setsCount, { color: colors.text }]}>{ex.target_sets}</Text>
-                <Pressable onPress={() => onSets(ex, 1)} hitSlop={8}>
+                <Pressable
+                  onPress={() => onSets(ex, 1)}
+                  hitSlop={8}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                   <Text style={{ color: colors.tint, fontSize: 20, fontWeight: '700' }}>+</Text>
                 </Pressable>
               </View>
               <View style={styles.stepper}>
                 {i > 0 && (
-                  <Pressable onPress={() => onSwap(ex, exercises[i - 1])} hitSlop={8}>
+                  <Pressable
+                    onPress={() => onSwap(ex, exercises[i - 1])}
+                    hitSlop={8}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                     <Text style={{ fontSize: 18, color: colors.textSecondary }}>▲</Text>
                   </Pressable>
                 )}
                 {!isLast && (
-                  <Pressable onPress={() => onSwap(ex, exercises[i + 1])} hitSlop={8}>
+                  <Pressable
+                    onPress={() => onSwap(ex, exercises[i + 1])}
+                    hitSlop={8}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
                     <Text style={{ fontSize: 18, color: colors.textSecondary }}>▼</Text>
                   </Pressable>
                 )}
@@ -118,5 +134,5 @@ const styles = StyleSheet.create({
   nameInput: { borderRadius: 10, padding: Spacing.three, fontSize: 17, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  setsCount: { minWidth: 24, textAlign: 'center', fontSize: 16, fontWeight: '600' },
+  setsCount: { minWidth: 24, textAlign: 'center', fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

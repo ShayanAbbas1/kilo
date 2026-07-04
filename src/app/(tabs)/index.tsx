@@ -3,7 +3,7 @@ import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
-import { Button, Card, SectionTitle } from '@/components/ui';
+import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -73,11 +73,11 @@ export default function WorkoutTab() {
     <FlatList
       data={routines}
       keyExtractor={(r) => r.id}
-      contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two }}
+      contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.six }}
       ListHeaderComponent={
         <View style={{ marginBottom: Spacing.two }}>
           {week && week.workouts > 0 && (
-            <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: Spacing.two }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: Spacing.two, fontVariant: ['tabular-nums'] }}>
               This week: {week.workouts} workout{week.workouts === 1 ? '' : 's'} ·{' '}
               {weightLabel(week.tonnage_kg, unit)} lifted
             </Text>
@@ -103,9 +103,11 @@ export default function WorkoutTab() {
         </View>
       }
       ListEmptyComponent={
-        <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-          Save a finished workout as a routine to start it with one tap.
-        </Text>
+        <EmptyState
+          icon="📋"
+          title="No routines yet"
+          hint="Save a finished workout as a routine to start it with one tap."
+        />
       }
       renderItem={({ item }) => (
         <Pressable

@@ -44,12 +44,12 @@ export default function WorkoutDetail() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three }}>
+    <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six }}>
       <Stack.Screen
         options={{
           title: workout?.name ?? 'Workout',
           headerRight: () => (
-            <Pressable onPress={onDelete} hitSlop={8}>
+            <Pressable onPress={onDelete} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.danger, fontSize: 17 }}>Delete</Text>
             </Pressable>
           ),
@@ -123,7 +123,9 @@ export default function WorkoutDetail() {
             ...((ex.superset_with_next || exercises[i - 1]?.superset_with_next)
               && { borderLeftWidth: 3, borderLeftColor: colors.tint }),
           }}>
-          <Pressable onPress={() => router.push(`/exercise/${ex.exercise_id}`)}>
+          <Pressable
+            onPress={() => router.push(`/exercise/${ex.exercise_id}`)}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
             <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>
               {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
             </Text>
@@ -133,7 +135,7 @@ export default function WorkoutDetail() {
               <Text style={{ color: colors.textSecondary, width: 24, fontWeight: '600' }}>
                 {s.set_type === 'warmup' ? 'W' : s.set_type === 'failure' ? 'F' : idx + 1}
               </Text>
-              <Text style={{ color: colors.text }}>
+              <Text style={{ color: colors.text, fontVariant: ['tabular-nums'] }}>
                 {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'} × {s.reps ?? '—'}
                 {s.rpe != null ? ` @ ${s.rpe}` : ''}
               </Text>

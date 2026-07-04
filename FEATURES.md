@@ -56,6 +56,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Notes on workouts (multiline field on active workout, shown in history) + per-exercise notes (below each exercise's sets, shown in history)
 - [x] Training calendar with month grid, weekly streaks (current/longest), tap-day filtering
 - [x] Routine editor (`/routine/[id]`): create empty/rename/add/remove exercises, ▲▼ reorder (no drag-drop dep), target-sets stepper; reorder keeps each exercise's superset flag attached to its row, exercise picker reused via a `routineId` param
+- [x] Beauty pass: shared `EmptyState` component (emoji + hook line) across every empty list/section, pressed states on every Pressable, `tabular-nums` on all numeric text, consistent scroll padding rhythm (incl. the new calendar/streaks, picker Recent/equipment chips, head-aggregation, and routine-editor surfaces), success haptic on workout finish
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher) (needs a dev build — Expo Go can't register launcher widgets; deferred until off Expo Go)
 - [x] Dark mode (system theme, all components themed)
 

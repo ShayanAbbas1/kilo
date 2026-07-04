@@ -46,6 +46,18 @@ export function SectionTitle({ children }: { children: ReactNode }) {
   return <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{children}</Text>;
 }
 
+/** Empty-list placeholder: emoji + a hook, not a shrug. Use for every empty list/section. */
+export function EmptyState({ icon, title, hint }: { icon: string; title: string; hint?: string }) {
+  const colors = useTheme();
+  return (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyIcon}>{icon}</Text>
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text>
+      {hint ? <Text style={[styles.emptyHint, { color: colors.textSecondary }]}>{hint}</Text> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
@@ -65,4 +77,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
     marginTop: Spacing.three,
   },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.four,
+    gap: Spacing.one,
+  },
+  emptyIcon: { fontSize: 32 },
+  emptyTitle: { fontSize: 15, fontWeight: '600' },
+  emptyHint: { fontSize: 13, textAlign: 'center' },
 });
