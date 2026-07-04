@@ -1,6 +1,6 @@
 // `node scripts/test-heads.mjs` — muscle-head heuristics + body-map aggregation
 import assert from 'node:assert/strict';
-import { muscleEmphasis } from '../src/lib/muscle-heads.ts';
+import { aggregateHeads, muscleEmphasis } from '../src/lib/muscle-heads.ts';
 import { toBodyData, MUSCLE_TO_SLUG, HEAT_COLORS } from '../src/lib/body-map.ts';
 
 const one = (name, muscles) => muscleEmphasis(name, muscles)[0];
@@ -38,5 +38,39 @@ const chest = data.find((d) => d.slug === 'chest');
 assert.equal(upperBack.intensity, HEAT_COLORS.length, 'busiest muscle hits top of ramp');
 assert.equal(chest.intensity, Math.ceil((3 / 12) * HEAT_COLORS.length));
 assert.ok(Object.values(MUSCLE_TO_SLUG).every((s) => typeof s === 'string'));
+
+// aggregateHeads: per-exercise weekly rows -> totals per head/region
+const calfRows = [
+  { wk: '2026-01', exercise_name: 'Seated Calf Raise', primary_muscles: '["calves"]', sets: 3 },
+  { wk: '2026-02', exercise_name: 'Seated Calf Raise', primary_muscles: '["calves"]', sets: 4 },
+  { wk: '2026-02', exercise_name: 'Standing Calf Raises', primary_muscles: '["calves"]', sets: 2 },
+];
+const calfHeads = aggregateHeads(calfRows, ['calves']);
+const soleus = calfHeads.find((h) => h.head === 'soleus (bent-knee)');
+assert.ok(soleus, 'seated calf raise rows land in soleus');
+assert.equal(soleus.total, 7, 'soleus total sums across weeks');
+assert.equal(soleus.byWeek.get('2026-01'), 3);
+assert.equal(soleus.byWeek.get('2026-02'), 4);
+const gastroc = calfHeads.find((h) => h.head === 'gastrocnemius (straight-leg)');
+assert.equal(gastroc.total, 2);
+
+const chestRows = [
+  { wk: '2026-01', exercise_name: 'Barbell Incline Bench Press', primary_muscles: '["chest"]', sets: 3 },
+  { wk: '2026-01', exercise_name: 'Barbell Incline Bench Press', primary_muscles: '["chest"]', sets: 2 },
+];
+const chestHeads = aggregateHeads(chestRows, ['chest']);
+assert.equal(chestHeads.length, 1);
+assert.equal(chestHeads[0].head, 'upper chest (clavicular head)', 'incline bench in clavicular');
+assert.equal(chestHeads[0].total, 5, 'totals sum correctly');
+
+// muscle outside RULES (e.g. forearms) yields []
+assert.deepEqual(
+  aggregateHeads(
+    [{ wk: '2026-01', exercise_name: 'Wrist Curl', primary_muscles: '["forearms"]', sets: 3 }],
+    ['forearms'],
+  ),
+  [],
+  'muscle outside RULES yields []',
+);
 
 console.log('test-heads: all assertions passed');
