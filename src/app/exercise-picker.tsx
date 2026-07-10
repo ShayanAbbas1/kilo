@@ -90,7 +90,7 @@ export default function ExercisePicker() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0 }}
+          style={styles.chipRow}
           contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.two }}>
           {MUSCLES.map((m) => (
             <Chip
@@ -106,7 +106,7 @@ export default function ExercisePicker() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0 }}
+          style={styles.chipRow}
           contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two, paddingBottom: Spacing.two }}>
           {EQUIPMENT.map((eq) => (
             <Chip
@@ -205,6 +205,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, gap: 2,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  // ScrollView defaults to flexShrink: 1; without shrink 0 the FlatList sibling squashes the chip rows
+  chipRow: { flexGrow: 0, flexShrink: 0 },
   sectionHeader: {
     fontSize: 12, fontWeight: '600', letterSpacing: 0.5,
     paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: 4,
