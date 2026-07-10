@@ -26,6 +26,12 @@ Free, local-first workout + body-weight + calorie tracker. Android-first via Exp
 - `npm run android` for emulator
 - Owner's daily driver is Android; iOS is a build target, not a test target, for now
 
+### Builds & updates (how the app reaches the phone)
+
+- **JS-only changes (most commits): no build needed.** Pushing to `main` triggers `.eas/workflows/publish-update.yml`, which publishes an EAS Update to the `preview` channel. The installed APK picks it up on next app restart. Manual equivalent: `npx eas-cli update --channel preview --message "..."`.
+- **Native changes (new native module, app.json plugins/config, SDK bump): rebuild the APK** with `npx eas-cli build -p android --profile preview`, then install it from the build page link (https://expo.dev/accounts/shayanabbas/projects/kilo/builds). Also bump `version` in app.json — `runtimeVersion` follows it (`appVersion` policy), which is what stops old APKs from receiving updates their native side can't run.
+- OTA updates only apply when the update's runtime version matches the installed build's; a mismatch fails safe (app keeps running the bundled JS, no crash).
+
 ## Conventions
 
 - FEATURES.md is the spec of record. Any commit that ships, changes, or defers a feature updates FEATURES.md **in the same commit** — check the box, one line on what shipped. Nobody will ask for this; it's part of "done".

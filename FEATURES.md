@@ -59,6 +59,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Beauty pass: shared `EmptyState` component (emoji + hook line) across every empty list/section, pressed states on every Pressable, `tabular-nums` on all numeric text, consistent scroll padding rhythm (incl. the new calendar/streaks, picker Recent/equipment chips, head-aggregation, and routine-editor surfaces), success haptic on workout finish
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher) (needs a dev build — Expo Go can't register launcher widgets; deferred until off Expo Go)
 - [x] Dark mode (system theme, all components themed)
+- [x] OTA updates — expo-updates + EAS Update on channel `preview`; push to `main` auto-publishes via `.eas/workflows/publish-update.yml`, installed APK updates on next restart (see AGENTS.md → Builds & updates)
 
 ## Phase 4 — Maybe, later, or never
 - [ ] Food database / barcode scanning (only if manual kcal entry proves too much friction)
