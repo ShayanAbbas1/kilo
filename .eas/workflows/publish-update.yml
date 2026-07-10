@@ -8,3 +8,4 @@ jobs:
     type: update
     params:
       channel: preview
+      platform: android
