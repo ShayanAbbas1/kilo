@@ -73,8 +73,18 @@ export default function ActiveWorkoutScreen() {
     }, 5000);
     return () => clearInterval(iv);
   }, [startedAt]);
-  // ponytail: decrementing-seconds timer, not wall-clock — drifts ~ms/tick, irrelevant for rest
+  // wall-clock rest timer: remaining is derived from an end timestamp each tick, because
+  // Android pauses JS timers in the background — a decrementing counter freezes there
   const [restLeft, setRestLeft] = useState<number | null>(null);
+  const restEndsAt = useRef<number | null>(null);
+  const startRest = useCallback((seconds: number) => {
+    restEndsAt.current = Date.now() + seconds * 1000;
+    setRestLeft(seconds);
+  }, []);
+  const stopRest = useCallback(() => {
+    restEndsAt.current = null;
+    setRestLeft(null);
+  }, []);
   // background notification for when rest ends while the app is backgrounded/locked;
   // suppressed by the foreground handler, so no extra handling needed when it fires in-app
   const restNotifId = useRef<string | null>(null);
@@ -99,11 +109,18 @@ export default function ActiveWorkoutScreen() {
     });
   }, [db]);
 
+  const restActive = restLeft != null;
   useEffect(() => {
-    if (restLeft == null) return;
-    const t = setTimeout(() => setRestLeft((l) => (l == null || l <= 1 ? null : l - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [restLeft]);
+    if (!restActive) return;
+    // interval (not chained timeouts) so a same-second tick can't stall the countdown;
+    // pending ticks fire on foreground resume, snapping the display back to wall clock
+    const iv = setInterval(() => {
+      const end = restEndsAt.current;
+      const left = end == null ? 0 : Math.ceil((end - Date.now()) / 1000);
+      setRestLeft(left > 0 ? left : null);
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [restActive]);
 
   const toVM = useCallback(
     (rows: WorkoutExerciseDetail[]): VMExercise[] =>
@@ -200,7 +217,7 @@ export default function ActiveWorkoutScreen() {
       updateSet(db, s.id, { completed: true });
       // supersets: no rest mid-chain — go straight to the paired exercise (Strong behavior)
       if (!ex.supersetWithNext) {
-        setRestLeft(restSec);
+        startRest(restSec);
         rearmRestNotif(restSec);
       }
       if (isPr) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -319,13 +336,19 @@ export default function ActiveWorkoutScreen() {
           </Text>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <Pressable
-              onPress={() => { setRestLeft((l) => (l ?? 0) + 15); rearmRestNotif((restLeft ?? 0) + 15); }}
+              onPress={() => {
+                const end = (restEndsAt.current ?? Date.now()) + 15000;
+                restEndsAt.current = end;
+                const left = Math.ceil((end - Date.now()) / 1000);
+                setRestLeft(left);
+                rearmRestNotif(left);
+              }}
               hitSlop={8}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
             </Pressable>
             <Pressable
-              onPress={() => { setRestLeft(null); clearRestNotif(); }}
+              onPress={() => { stopRest(); clearRestNotif(); }}
               hitSlop={8}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
