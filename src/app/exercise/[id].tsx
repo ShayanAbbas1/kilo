@@ -1,19 +1,24 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { LineChart, Point } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
-import { Card, SectionTitle } from '@/components/ui';
+import { Button, Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { Exercise, ProgressionRow, getExercise, getExerciseProgression } from '@/db/queries';
+import {
+  Exercise, ProgressionRow, getExercise, getExerciseProgression, getSetting, setSetting,
+} from '@/db/queries';
 import { MUSCLE_TO_SLUG } from '@/lib/body-map';
 import { muscleEmphasis } from '@/lib/muscle-heads';
+import { projectToTarget } from '@/lib/projection';
 import { useSettings } from '@/lib/settings-context';
 import { formatDay } from '@/lib/dates';
-import { formatWeight } from '@/lib/units';
+import { formatWeight, fromDisplayWeight } from '@/lib/units';
+
+const goalKey = (exerciseId: string) => `goal_e1rm_${exerciseId}`;
 
 function parseMuscles(json: string): string[] {
   try { return JSON.parse(json) as string[]; } catch { return []; }
@@ -34,11 +39,15 @@ export default function ExerciseDetail() {
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [rows, setRows] = useState<ProgressionRow[]>([]);
   const [metric, setMetric] = useState<Metric>('est1rm');
+  const [goalKg, setGoalKg] = useState<number | null>(null);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
 
   useFocusEffect(
     useCallback(() => {
       getExercise(db, id).then(setExercise);
       getExerciseProgression(db, id).then(setRows);
+      getSetting(db, goalKey(id)).then((v) => setGoalKg(v ? Number(v) : null));
     }, [db, id]),
   );
 
@@ -48,6 +57,38 @@ export default function ExerciseDetail() {
   const bestWeight = rows.length ? Math.max(...rows.map((r) => r.top_weight)) : null;
   const best1rm = rows.length ? Math.max(...rows.map((r) => r.est1rm)) : null;
   const bestVolume = rows.length ? Math.max(...rows.map((r) => r.volume)) : null;
+
+  // e1RM goal: regression over the last ~10 sessions' est. 1RM (rows is day-ascending already).
+  const e1rmProjection = goalKg != null
+    ? projectToTarget(rows.slice(-10).map((r) => ({ date: r.day, value: r.est1rm })), goalKg)
+    : null;
+  const goalPct = goalKg != null && best1rm != null ? Math.round((best1rm / goalKg) * 100) : null;
+
+  const startEditGoal = () => {
+    setGoalInput(goalKg != null ? formatWeight(goalKg, unit) : '');
+    setEditingGoal(true);
+  };
+  const saveGoal = () => {
+    const n = parseFloat(goalInput.replace(',', '.'));
+    if (isNaN(n) || n <= 0) return;
+    const kg = fromDisplayWeight(n, unit);
+    setSetting(db, goalKey(id), String(kg));
+    setGoalKg(kg);
+    setEditingGoal(false);
+  };
+  const clearGoal = () => {
+    Alert.alert('Clear goal?', undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear', style: 'destructive',
+        onPress: () => {
+          setSetting(db, goalKey(id), '');
+          setGoalKg(null);
+          setEditingGoal(false);
+        },
+      },
+    ]);
+  };
 
   const primary = exercise ? parseMuscles(exercise.primary_muscles) : [];
   const secondary = exercise ? parseMuscles(exercise.secondary_muscles) : [];
@@ -67,6 +108,42 @@ export default function ExerciseDetail() {
         <Stat label={`Best ${unit}`} value={bestWeight != null ? fmt(bestWeight) : '—'} />
         <Stat label="Est. 1RM" value={best1rm != null ? fmt(best1rm) : '—'} />
         <Stat label="Best session" value={bestVolume != null ? fmt(bestVolume) : '—'} />
+      </View>
+
+      <View style={{ marginTop: Spacing.two }}>
+        {editingGoal ? (
+          <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+            <TextInput
+              style={{
+                flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+                color: colors.text, backgroundColor: colors.backgroundElement,
+              }}
+              value={goalInput}
+              onChangeText={setGoalInput}
+              keyboardType="decimal-pad"
+              placeholder={`Est. 1RM goal (${unit})`}
+              placeholderTextColor={colors.textSecondary}
+              autoFocus
+            />
+            <Button title="Save" onPress={saveGoal} />
+            {goalKg != null && <Button title="Clear" kind="danger" onPress={clearGoal} />}
+          </View>
+        ) : (
+          <Pressable onPress={startEditGoal}>
+            <Text style={{ color: colors.tint, fontWeight: '600', fontSize: 13 }}>
+              {goalKg != null ? `🎯 Goal: ${fmt(goalKg)} ${unit} · edit` : '🎯 Set an est. 1RM goal'}
+            </Text>
+          </Pressable>
+        )}
+        {goalKg != null && !editingGoal && (
+          <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 2 }}>
+            {e1rmProjection?.projectedDate
+              ? `On pace by ${formatDay(e1rmProjection.projectedDate)}`
+              : goalPct != null
+                ? goalPct >= 100 ? 'Goal reached 🎉' : `${goalPct}% of the way there`
+                : null}
+          </Text>
+        )}
       </View>
 
       <SectionTitle>Targets</SectionTitle>

@@ -14,13 +14,14 @@ import {
   getCalorieEntries, getWeightTrend, upsertWeighIn,
 } from '@/db/queries';
 import { formatDay, todayStr } from '@/lib/dates';
+import { projectToTarget } from '@/lib/projection';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
 
 export default function BodyTab() {
   const db = useSQLiteContext();
   const colors = useTheme();
-  const { unit, kcalTarget } = useSettings();
+  const { unit, kcalTarget, goalWeightKg } = useSettings();
 
   const [trend, setTrend] = useState<WeightRow[]>([]);
   const [weightText, setWeightText] = useState('');
@@ -68,6 +69,15 @@ export default function BodyTab() {
   const todayRow = trend.find((r) => r.date === today);
   const prevRow = trend.find((r) => r.date < today);
   const delta = todayRow && prevRow ? todayRow.weight_kg - prevRow.avg7 : null;
+
+  // goal projection: regression over the last 28 days of 7-day-avg weights (trend is
+  // DESC by date — take the most recent 28, then flip to chronological order).
+  const weightProjection = goalWeightKg != null
+    ? projectToTarget(
+      [...trend.slice(0, 28)].reverse().map((r) => ({ date: r.date, value: r.avg7 })),
+      goalWeightKg,
+    )
+    : null;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -153,6 +163,16 @@ export default function BodyTab() {
 
         <SectionTitle>Weight trend</SectionTitle>
         <Card style={{ gap: 6 }}>
+          {weightProjection && (
+            <Text style={{
+              color: weightProjection.projectedDate ? colors.tint : colors.textSecondary,
+              fontWeight: '600', fontSize: 13, marginBottom: 4,
+            }}>
+              {weightProjection.projectedDate
+                ? `On pace for ${formatWeight(goalWeightKg!, unit)} ${unit} around ${formatDay(weightProjection.projectedDate)}`
+                : 'Trending away from your goal'}
+            </Text>
+          )}
           {trend.length === 0 && (
             <EmptyState
               icon="⚖️"

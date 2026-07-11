@@ -42,6 +42,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested.
 - [x] **Head-level weekly aggregation**: muscle drill-down's "By head/region" card — chip row + weekly ColumnChart + BarList of sets per head/region, via `aggregateHeads()` over `MUSCLE_EXERCISE_WEEKLY_SQL`
+- [x] **Goal projections**: linear-regression `projectToTarget()` (`src/lib/projection.ts`, tested) turns a trend into "on pace by \<date\>". Body weight goal (settings, kg) shows "on pace for X by \<date\>" or "trending away" near the Body tab's weight trend (regression over last 28 days of 7-day-avg weights). Per-exercise est. 1RM goal, set/edit/cleared from the exercise page, shows a projected date or "N% of the way there" (regression over last ~10 sessions). No schema change — both goals live in the `settings` key-value table.
 
 ## Phase 3 — Quality of life
 - [x] Elapsed-time in workout header, haptic on set completion
