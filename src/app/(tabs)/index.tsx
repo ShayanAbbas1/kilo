@@ -11,17 +11,9 @@ import {
   createRoutine, deleteRoutine, getActiveWorkout, getPeriodSummary, listRoutines,
   startWorkout, startWorkoutFromRoutine,
 } from '@/db/queries';
-import { formatDateTime } from '@/lib/dates';
+import { formatDateTime, startOfWeekIso } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
 import { weightLabel } from '@/lib/units';
-
-/** Monday 00:00 of the current week, local time. */
-function startOfWeekIso(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d.toISOString();
-}
 
 export default function WorkoutTab() {
   const db = useSQLiteContext();

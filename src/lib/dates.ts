@@ -10,6 +10,14 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
+/** Monday 00:00 local time of the week containing `ref` (default: now), as ISO. */
+export function startOfWeekIso(ref: Date = new Date()): string {
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString();
+}
+
 export function formatDay(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });

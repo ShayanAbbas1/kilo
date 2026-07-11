@@ -10,10 +10,11 @@ import { HEAT_COLORS, toBodyData } from '@/lib/body-map';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  CalorieDay, MuscleSetsRow, PrRow, TopExerciseRow, WeeklyTrend, WeightRow,
-  getCalorieDays, getMuscleSets, getPrHistory, getTopExercises, getWeeklyTrend, getWeightTrend,
+  CalorieDay, MuscleSetsRow, PrRow, StalledLift, TopExerciseRow, WeeklyTrend, WeightRow,
+  getCalorieDays, getMuscleSets, getPrHistory, getStalledLifts, getTopExercises, getWeeklyTrend,
+  getWeightTrend,
 } from '@/db/queries';
-import { formatDateTime } from '@/lib/dates';
+import { formatDateTime, formatDay } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, toDisplayWeight, weightLabel } from '@/lib/units';
 
@@ -37,6 +38,7 @@ export default function StatsTab() {
   const [topExercises, setTopExercises] = useState<TopExerciseRow[]>([]);
   const [trend, setTrend] = useState<WeeklyTrend | null>(null);
   const [prs, setPrs] = useState<PrRow[]>([]);
+  const [stalled, setStalled] = useState<StalledLift[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,7 +48,8 @@ export default function StatsTab() {
       getTopExercises(db, 8).then(setTopExercises);
       getWeeklyTrend(db, daysAgoIso(84).slice(0, 10)).then(setTrend);
       getPrHistory(db, 10).then(setPrs);
-    }, [db, range]),
+      getStalledLifts(db, kcalTarget, unit).then(setStalled);
+    }, [db, range, kcalTarget, unit]),
   );
 
   const weightPoints: Point[] = [...weights].reverse().map((w) => ({
@@ -67,6 +70,44 @@ export default function StatsTab() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
+      <Pressable onPress={() => router.push('/report')} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+        <Card style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: Spacing.three,
+        }}>
+          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>📅 Weekly report</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 18 }}>›</Text>
+        </Card>
+      </Pressable>
+      {stalled.length > 0 && (
+        <>
+          <SectionTitle>Stalled lifts</SectionTitle>
+          <Card style={{ gap: 2 }}>
+            {stalled.map((s) => (
+              <Pressable
+                key={s.id}
+                onPress={() => router.push(`/exercise/${s.id}`)}
+                style={({ pressed }) => [
+                  { paddingVertical: 10, borderRadius: 8, paddingHorizontal: 6, gap: 2 },
+                  pressed && { backgroundColor: colors.backgroundSelected },
+                ]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>
+                    ⚠️ {s.name}
+                  </Text>
+                  <Text style={{ color: colors.accent, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                    flat since {formatDay(s.stalledSince)}{'  ›'}
+                  </Text>
+                </View>
+                {s.context && (
+                  <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{s.context}</Text>
+                )}
+              </Pressable>
+            ))}
+          </Card>
+        </>
+      )}
+
       <SectionTitle>The Trendline — 12 weeks, is it working?</SectionTitle>
       <Card>
         {trend && (

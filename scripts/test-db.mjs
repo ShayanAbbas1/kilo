@@ -4,9 +4,10 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   SCHEMA_SQL, PREV_SETS_SQL, WEIGHT_TREND_SQL, CALORIE_DAYS_SQL, WORKOUT_HISTORY_SQL,
   WORKOUT_HISTORY_DAY_SQL,
-  EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
+  EXERCISE_PROGRESSION_SQL, STALL_CANDIDATES_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
-  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL, MIGRATION_V3_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MUSCLE_LAST_TRAINED_SQL,
+  MIGRATION_V2_SQL, MIGRATION_V3_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -93,6 +94,13 @@ assert.equal(prog[0].top_weight, 55);
 assert.ok(Math.abs(prog[0].est1rm - 55 * (1 + 8 / 30)) < 1e-9, 'Epley est 1RM');
 assert.equal(prog[1].volume, 60 * 8 + 60 * 7, 'working-set volume only, warmups excluded');
 
+// --- stall candidates: per-exercise per-session best e1RM (feeds plateau.ts) ---
+const cand = db.prepare(STALL_CANDIDATES_SQL).all('2026-06-01');
+assert.equal(cand.length, 2, 'two finished bench sessions, one row each');
+assert.ok(cand.every((r) => r.id === 'bench' && r.name === 'Bench Press'), 'carries exercise id + name');
+assert.deepEqual(cand.map((r) => r.day), ['2026-06-20', '2026-06-27'], 'ascending by day');
+assert.ok(Math.abs(cand[0].est1rm - 55 * (1 + 8 / 30)) < 1e-9, 'best Epley e1RM per session');
+
 // --- local-day bucketing: SQL date(...,'localtime') must match JS local day ---
 // started_at is a UTC 'Z' timestamp; the calendar buckets by LOCAL day in JS, so the
 // analytics SQL must too. Expected value is computed with local getters here, so this
@@ -170,6 +178,12 @@ assert.ok(!prs.some((r) => r.weight_kg === 50), 'the very first working set is n
 assert.ok(!prs.some((r) => r.weight_kg === 20), 'warmups never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 62.5), 'incomplete sets never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 100), 'sets from an unfinished workout never appear');
+
+// --- weekly report: last-trained day per muscle, all-time, active workout excluded ---
+const lastTrained = db.prepare(MUSCLE_LAST_TRAINED_SQL).all();
+const chestLast = lastTrained.find((r) => r.muscle === 'chest');
+assert.equal(chestLast.last_trained, '2026-06-27', 'most recent FINISHED bench session, not the active w3');
+assert.equal(lastTrained.find((r) => r.muscle === 'quadriceps'), undefined, 'squat never trained -> no row');
 
 // --- supersets: flag on a workout_exercise, read back through the app's SELECT ---
 db.prepare('UPDATE workout_exercises SET superset_with_next = 1 WHERE id = ?').run('we1');
