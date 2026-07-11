@@ -8,7 +8,10 @@ import { BodyHeatmap } from '@/components/body-heatmap';
 import { Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { Exercise, ProgressionRow, getExercise, getExerciseProgression } from '@/db/queries';
+import {
+  Exercise, ProgressionRow, StalledLift,
+  getExercise, getExerciseProgression, getStalledLifts,
+} from '@/db/queries';
 import { MUSCLE_TO_SLUG } from '@/lib/body-map';
 import { muscleEmphasis } from '@/lib/muscle-heads';
 import { useSettings } from '@/lib/settings-context';
@@ -30,16 +33,18 @@ export default function ExerciseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const colors = useTheme();
-  const { unit } = useSettings();
+  const { unit, kcalTarget } = useSettings();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [rows, setRows] = useState<ProgressionRow[]>([]);
   const [metric, setMetric] = useState<Metric>('est1rm');
+  const [stall, setStall] = useState<StalledLift | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       getExercise(db, id).then(setExercise);
       getExerciseProgression(db, id).then(setRows);
-    }, [db, id]),
+      getStalledLifts(db, kcalTarget, unit).then((all) => setStall(all.find((s) => s.id === id) ?? null));
+    }, [db, id, kcalTarget, unit]),
   );
 
   const points: Point[] = rows.map((r) => ({ label: r.day.slice(5), value: r[metric] }));
@@ -68,6 +73,19 @@ export default function ExerciseDetail() {
         <Stat label="Est. 1RM" value={best1rm != null ? fmt(best1rm) : '—'} />
         <Stat label="Best session" value={bestVolume != null ? fmt(bestVolume) : '—'} />
       </View>
+
+      {stall && (
+        <Card style={{ marginTop: Spacing.two, gap: 4, borderLeftWidth: 3, borderLeftColor: colors.accent }}>
+          <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '700' }}>
+            ⚠️ Stalled since {formatDay(stall.stalledSince)}
+          </Text>
+          {stall.context && (
+            <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 19 }}>
+              {stall.context}
+            </Text>
+          )}
+        </Card>
+      )}
 
       <SectionTitle>Targets</SectionTitle>
       <Card style={{ gap: Spacing.two }}>

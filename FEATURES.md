@@ -42,6 +42,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested.
 - [x] **Head-level weekly aggregation**: muscle drill-down's "By head/region" card — chip row + weekly ColumnChart + BarList of sets per head/region, via `aggregateHeads()` over `MUSCLE_EXERCISE_WEEKLY_SQL`
+- [x] **Plateau detection with cross-domain context**: "Stalled lifts" card on Stats + "Stalled since" badge on the exercise page flag lifts whose recent-4-session best e1RM ≤ the prior 4's, and explain each with diet (avg kcal vs target) + body-weight (7-day-smoothed) change since the stall. Pure/tested in `src/lib/plateau.ts` over `STALL_CANDIDATES_SQL`.
 
 ## Phase 3 — Quality of life
 - [x] Elapsed-time in workout header, haptic on set completion
