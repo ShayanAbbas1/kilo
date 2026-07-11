@@ -8,6 +8,7 @@ import {
   EXERCISE_PROGRESSION_SQL,
   MUSCLE_EXERCISE_WEEKLY_SQL,
   MUSCLE_EXERCISES_SQL,
+  MUSCLE_LAST_TRAINED_SQL,
   MUSCLE_SETS_SQL,
   MUSCLE_WEEKLY_SETS_SQL,
   PERIOD_SUMMARY_SQL,
@@ -584,6 +585,13 @@ export async function getMuscleExerciseWeekly(
 ): Promise<MuscleExerciseWeeklyRow[]> {
   return db.getAllAsync<MuscleExerciseWeeklyRow>(
     MUSCLE_EXERCISE_WEEKLY_SQL, sinceDate, JSON.stringify(muscles));
+}
+
+export type MuscleLastTrained = { muscle: string; last_trained: string };
+
+/** Last local day each muscle group was trained, all-time — weekly report staleness check. */
+export async function getMuscleLastTrained(db: SQLiteDatabase): Promise<MuscleLastTrained[]> {
+  return db.getAllAsync<MuscleLastTrained>(MUSCLE_LAST_TRAINED_SQL);
 }
 
 export async function getBestWeight(db: SQLiteDatabase, exerciseId: string): Promise<number | null> {

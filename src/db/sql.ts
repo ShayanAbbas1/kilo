@@ -182,6 +182,21 @@ GROUP BY je.value
 ORDER BY sets DESC;
 `;
 
+/**
+ * Most recent finished-workout local day per primary muscle, all-time — the
+ * weekly report's "untrained for N+ days" staleness check.
+ */
+export const MUSCLE_LAST_TRAINED_SQL = `
+SELECT je.value AS muscle, MAX(date(w.started_at, 'localtime')) AS last_trained
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id,
+  json_each(e.primary_muscles) je
+WHERE s.completed = 1 AND s.set_type != 'warmup' AND w.finished_at IS NOT NULL
+GROUP BY je.value;
+`;
+
 /** Most-trained exercises (by session count). Params: limit */
 export const TOP_EXERCISES_SQL = `
 SELECT e.id, e.name, COUNT(DISTINCT w.id) AS sessions,
