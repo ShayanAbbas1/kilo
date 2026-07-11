@@ -10,6 +10,8 @@ type AppSettings = {
   setKcalTarget: (n: number | null) => void;
   showRpe: boolean;
   setShowRpe: (b: boolean) => void;
+  goalWeightKg: number | null;
+  setGoalWeightKg: (n: number | null) => void;
 };
 
 const Ctx = createContext<AppSettings>({
@@ -19,6 +21,8 @@ const Ctx = createContext<AppSettings>({
   setKcalTarget: () => {},
   showRpe: false,
   setShowRpe: () => {},
+  goalWeightKg: null,
+  setGoalWeightKg: () => {},
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -26,6 +30,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [unit, setUnitState] = useState<Unit>('kg');
   const [kcalTarget, setKcalTargetState] = useState<number | null>(null);
   const [showRpe, setShowRpeState] = useState(false);
+  const [goalWeightKg, setGoalWeightKgState] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -35,6 +40,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (t) setKcalTargetState(Number(t));
       const r = await getSetting(db, 'show_rpe');
       setShowRpeState(r === '1');
+      const g = await getSetting(db, 'goal_weight_kg');
+      if (g) setGoalWeightKgState(Number(g));
     })();
   }, [db]);
 
@@ -53,8 +60,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSetting(db, 'show_rpe', b ? '1' : '0');
   }, [db]);
 
+  const setGoalWeightKg = useCallback((n: number | null) => {
+    setGoalWeightKgState(n);
+    setSetting(db, 'goal_weight_kg', n == null ? '' : String(n));
+  }, [db]);
+
   return (
-    <Ctx.Provider value={{ unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe }}>
+    <Ctx.Provider value={{
+      unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe, goalWeightKg, setGoalWeightKg,
+    }}>
       {children}
     </Ctx.Provider>
   );

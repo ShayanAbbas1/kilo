@@ -11,15 +11,19 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { exportAll, getSetting, importAll, setSetting } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
-import { Unit } from '@/lib/units';
+import { Unit, formatWeight, fromDisplayWeight } from '@/lib/units';
 import { todayStr } from '@/lib/dates';
 
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const colors = useTheme();
-  const { unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe } = useSettings();
+  const {
+    unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe, goalWeightKg, setGoalWeightKg,
+  } = useSettings();
   const [targetText, setTargetText] = useState(kcalTarget ? String(kcalTarget) : '');
   const [restText, setRestText] = useState('');
+  const [goalWeightText, setGoalWeightText] = useState(
+    goalWeightKg != null ? formatWeight(goalWeightKg, unit) : '');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -34,6 +38,11 @@ export default function SettingsScreen() {
   const saveTarget = () => {
     const n = parseInt(targetText, 10);
     setKcalTarget(isNaN(n) || n <= 0 ? null : n);
+  };
+
+  const saveGoalWeight = () => {
+    const n = parseFloat(goalWeightText.replace(',', '.'));
+    setGoalWeightKg(isNaN(n) || n <= 0 ? null : fromDisplayWeight(n, unit));
   };
 
   const onExport = async () => {
@@ -115,6 +124,19 @@ export default function SettingsScreen() {
           placeholderTextColor={colors.textSecondary}
         />
         <Button title="Save" onPress={saveTarget} />
+      </Card>
+
+      <SectionTitle>Body weight goal ({unit})</SectionTitle>
+      <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+        <TextInput
+          style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+          value={goalWeightText}
+          onChangeText={setGoalWeightText}
+          keyboardType="decimal-pad"
+          placeholder="e.g. 80 (empty = no goal)"
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Button title="Save" onPress={saveGoalWeight} />
       </Card>
 
       <SectionTitle>Rest timer (seconds)</SectionTitle>
