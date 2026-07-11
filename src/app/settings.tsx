@@ -4,6 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Button, Card, SectionTitle } from '@/components/ui';
@@ -159,6 +160,19 @@ export default function SettingsScreen() {
         </Text>
         <Button title="Export data (JSON)" onPress={onExport} disabled={busy} />
         <Button title="Restore from export" kind="secondary" onPress={onImport} disabled={busy} />
+      </Card>
+
+      <SectionTitle>Import</SectionTitle>
+      <Card style={{ gap: Spacing.two }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+          Coming from Strong? Bring your workout history — it merges with your Kilo data.
+        </Text>
+        <Button
+          title="Import from Strong (CSV)"
+          kind="secondary"
+          onPress={() => router.push('/import-strong')}
+          disabled={busy}
+        />
       </Card>
 
       <View style={{ marginTop: Spacing.five, alignItems: 'center' }}>

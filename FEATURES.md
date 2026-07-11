@@ -64,6 +64,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [ ] Home-screen widget / quick actions (log weigh-in from launcher) (needs a dev build — Expo Go can't register launcher widgets; deferred until off Expo Go)
 - [x] Dark mode (system theme, all components themed)
 - [x] OTA updates — expo-updates + EAS Update on channel `preview`; push to `main` auto-publishes via `.eas/workflows/publish-update.yml`, installed APK updates on next restart (see AGENTS.md → Builds & updates)
+- [x] **Import from Strong (CSV)** (`/import-strong` modal, entry in Settings): parses a Strong export (`;`/`,` delimited, kg or lbs), conservative name-matching against the exercise library (exact + token-set with the "(Equipment)" suffix folded in; ambiguous → ask), unmatched exercises get a muscle-group chip picker and become custom exercises (equipment inferred from the name). Additive-only: existing data untouched, deterministic `strong_<datetime>` workout ids make re-imports skip what's already in. Parse/match/plan pure in `src/lib/strong-import.ts`, tested.
 
 ## Phase 4 — Maybe, later, or never
 - [ ] Food database / barcode scanning (only if manual kcal entry proves too much friction)

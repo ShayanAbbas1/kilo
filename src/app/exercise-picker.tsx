@@ -13,7 +13,7 @@ import {
   searchExercises,
 } from '@/db/queries';
 
-const MUSCLES = [
+export const MUSCLES = [
   'chest', 'lats', 'middle back', 'lower back', 'shoulders', 'traps',
   'biceps', 'triceps', 'forearms', 'quadriceps', 'hamstrings', 'glutes',
   'calves', 'abdominals', 'abductors', 'adductors', 'neck',
@@ -180,7 +180,7 @@ export default function ExercisePicker() {
   );
 }
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+export function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   const colors = useTheme();
   return (
     <Pressable
