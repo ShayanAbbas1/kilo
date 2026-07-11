@@ -4,6 +4,12 @@ Free, local-first workout + body-weight + calorie tracker. Android-first via Exp
 
 Built by a lifter who lost 40+ kg tracking all of this manually across paywalled apps. Kilo puts training, weight, and calories on one timeline — free forever.
 
+## 📲 Get the app
+
+**[Download the Android APK](https://expo.dev/artifacts/eas/Noxx-UTdcX6vJvbWMR7uC2LvL7EIQRFM5qYEaStv7lc.apk)** — install it once and it keeps itself current: the app pulls updates over the air on restart. Play Store release is planned; until then this is the official way to get Kilo.
+
+> Installing over an existing Kilo keeps your data. Don't uninstall first — all data lives on-device.
+
 ## Why it exists
 
 - **Free forever, no paywall.** No backend, no accounts, no sync servers. All data lives on-device in SQLite; export/import as JSON means your data is always yours.
@@ -32,4 +38,4 @@ Note: the rest-timer background notification needs a dev build — expo-notifica
 
 All builds: https://expo.dev/accounts/shayanabbas/projects/kilo/builds
 
-- 2026-07-04 — first standalone Android APK (preview profile): https://expo.dev/accounts/shayanabbas/projects/kilo/builds/17ddeaaa-ce9c-49ce-be7f-c3fac081ad62
+JS-only changes ship over the air on merge to `main` (no new APK). A new APK is only cut for native changes — when that happens, the download link above gets updated in the same PR.

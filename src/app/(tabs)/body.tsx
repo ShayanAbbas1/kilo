@@ -9,12 +9,13 @@ import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  CalorieEntry, WeightRow,
+  CalorieDay, CalorieEntry, WeightRow,
   addCalorieEntry, deleteCalorieEntry, deleteWeighIn,
-  getCalorieEntries, getWeightTrend, upsertWeighIn,
+  getCalorieDays, getCalorieEntries, getWeightTrend, upsertWeighIn,
 } from '@/db/queries';
 import { formatDay, todayStr } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
+import { estimateTdee } from '@/lib/tdee';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
 
 export default function BodyTab() {
@@ -25,6 +26,7 @@ export default function BodyTab() {
   const [trend, setTrend] = useState<WeightRow[]>([]);
   const [weightText, setWeightText] = useState('');
   const [entries, setEntries] = useState<CalorieEntry[]>([]);
+  const [calDays, setCalDays] = useState<CalorieDay[]>([]);
   const [kcalText, setKcalText] = useState('');
   const [labelText, setLabelText] = useState('');
   const [proteinText, setProteinText] = useState('');
@@ -38,6 +40,7 @@ export default function BodyTab() {
       setWeightText(t ? formatWeight(t.weight_kg, unit) : '');
     });
     getCalorieEntries(db, today).then(setEntries);
+    getCalorieDays(db, 40).then(setCalDays);
   }, [db, today, unit]);
 
   useFocusEffect(reload);
@@ -68,6 +71,8 @@ export default function BodyTab() {
   const todayRow = trend.find((r) => r.date === today);
   const prevRow = trend.find((r) => r.date < today);
   const delta = todayRow && prevRow ? todayRow.weight_kg - prevRow.avg7 : null;
+
+  const tdee = estimateTdee(trend, calDays, today);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -148,6 +153,26 @@ export default function BodyTab() {
               title="No meals logged"
               hint="Log meals separately or one daily total — your call."
             />
+          )}
+        </Card>
+
+        <SectionTitle>Energy expenditure</SectionTitle>
+        <Card style={{ gap: 2 }}>
+          {tdee.ok ? (
+            <>
+              <Text style={{ color: colors.text, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                ≈ {Math.round(tdee.tdee).toLocaleString()} kcal/day
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                avg intake {Math.round(tdee.avgIntake).toLocaleString()} kcal · trending{' '}
+                {tdee.kgPerWeek < 0 ? '−' : '+'}{formatWeight(Math.abs(tdee.kgPerWeek), unit)} {unit}/week
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                estimated from your last {tdee.windowDays} days of weigh-ins and calories
+              </Text>
+            </>
+          ) : (
+            <EmptyState icon="🔥" title="Not enough data yet" hint={tdee.reason} />
           )}
         </Card>
 
