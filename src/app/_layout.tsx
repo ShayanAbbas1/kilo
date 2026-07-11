@@ -26,6 +26,10 @@ export default function RootLayout() {
             <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />
             <Stack.Screen name="plates" options={{ presentation: 'modal', title: 'Plates' }} />
             <Stack.Screen name="report" options={{ presentation: 'modal', title: 'Weekly Report' }} />
+            <Stack.Screen
+              name="import-strong"
+              options={{ presentation: 'modal', title: 'Import from Strong' }}
+            />
           </Stack>
         </SettingsProvider>
       </SQLiteProvider>

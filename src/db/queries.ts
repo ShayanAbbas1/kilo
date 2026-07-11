@@ -673,6 +673,54 @@ export async function exportAll(db: SQLiteDatabase): Promise<string> {
   return JSON.stringify(out);
 }
 
+export async function listExerciseRefs(db: SQLiteDatabase): Promise<{ id: string; name: string }[]> {
+  return db.getAllAsync<{ id: string; name: string }>('SELECT id, name FROM exercises');
+}
+
+/** Which of these workout ids already exist (i.e. were imported before). */
+export async function getExistingWorkoutIds(db: SQLiteDatabase, ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT id FROM workouts WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids);
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Insert a Strong import plan (src/lib/strong-import.ts). Additive only — existing
+ * data is never touched: a workout whose deterministic id already exists (a prior
+ * import of the same file) is skipped whole, children included.
+ */
+export async function importStrongWorkouts(
+  db: SQLiteDatabase,
+  plan: { workouts: Record<string, string | number | null>[];
+    workout_exercises: Record<string, string | number | null>[];
+    sets: Record<string, string | number | null>[] },
+): Promise<{ imported: number; skipped: number }> {
+  const insert = (table: string, row: Record<string, string | number | null>) => {
+    const keys = Object.keys(row);
+    return db.runAsync(
+      `INSERT INTO ${table} (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`,
+      ...keys.map((k) => row[k]));
+  };
+  let imported = 0;
+  let skipped = 0;
+  await db.withTransactionAsync(async () => {
+    for (const w of plan.workouts) {
+      const exists = await db.getFirstAsync('SELECT 1 FROM workouts WHERE id = ?', String(w.id));
+      if (exists) { skipped++; continue; }
+      await insert('workouts', w);
+      for (const we of plan.workout_exercises) {
+        if (we.workout_id === w.id) await insert('workout_exercises', we);
+      }
+      for (const s of plan.sets) {
+        if (String(s.workout_exercise_id).startsWith(`${w.id}_`)) await insert('sets', s);
+      }
+      imported++;
+    }
+  });
+  return { imported, skipped };
+}
+
 /** Restore from a Kilo export. Replaces all current data. */
 export async function importAll(db: SQLiteDatabase, json: string): Promise<void> {
   const data = JSON.parse(json);
