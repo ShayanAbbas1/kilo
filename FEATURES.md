@@ -42,6 +42,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] **Body heatmap**: front+back anatomical figures on Stats colored by sets per muscle (react-native-body-highlighter), heat legend, follows the 7d/30d/365d toggle; tap a muscle to drill down (`/muscle/[slug]`: 12-week sets chart + exercises that trained it)
 - [x] **Muscle-head granularity**: per-exercise emphasis inferred from the name (clavicular/sternal chest, biceps short/long head, triceps heads, delt regions, soleus vs gastroc, …) shown on the exercise page with a mini target-map (primary/secondary highlighted). Heuristics in `src/lib/muscle-heads.ts`, tested.
 - [x] **Head-level weekly aggregation**: muscle drill-down's "By head/region" card — chip row + weekly ColumnChart + BarList of sets per head/region, via `aggregateHeads()` over `MUSCLE_EXERCISE_WEEKLY_SQL`
+- [x] **Adaptive TDEE**: Body-tab card estimating real daily energy expenditure over the last 28 days (avg logged intake − 7-day-smoothed weight change × 7700 kcal/kg) with avg intake and implied kg/week trend; needs ≥10 logged calorie days and weigh-ins near both window edges, else a "log N more days" hint. Math in `src/lib/tdee.ts`, tested.
 
 ## Phase 3 — Quality of life
 - [x] Elapsed-time in workout header, haptic on set completion
