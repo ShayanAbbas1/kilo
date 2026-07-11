@@ -42,7 +42,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node scripts/test-db.mjs && node scripts/test-heads.mjs && node scripts/test-plates.mjs && node scripts/test-calendar.mjs && node scripts/test-tdee.mjs && node scripts/test-weekly-report.mjs"
+    "test": "node scripts/test-db.mjs && node scripts/test-heads.mjs && node scripts/test-plates.mjs && node scripts/test-calendar.mjs && node scripts/test-tdee.mjs && node scripts/test-weekly-report.mjs && node scripts/test-plateau.mjs"
   },
   "private": true
 }

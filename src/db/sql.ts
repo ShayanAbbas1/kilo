@@ -165,6 +165,27 @@ ORDER BY day;
 `;
 
 /**
+ * Per-session best estimated 1RM (Epley) for every exercise since a date — the
+ * plateau-detection input. One row per exercise per local day. Params: since
+ * date (YYYY-MM-DD). Grouping/ordering mirror EXERCISE_PROGRESSION_SQL.
+ */
+export const STALL_CANDIDATES_SQL = `
+SELECT we.exercise_id AS id, e.name AS name,
+  date(w.started_at, 'localtime') AS day,
+  MAX(s.weight_kg * (1 + s.reps / 30.0)) AS est1rm
+FROM sets s
+JOIN workout_exercises we ON we.id = s.workout_exercise_id
+JOIN workouts w ON w.id = we.workout_id
+JOIN exercises e ON e.id = we.exercise_id
+WHERE s.completed = 1 AND s.set_type != 'warmup'
+  AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+  AND w.finished_at IS NOT NULL
+  AND date(w.started_at, 'localtime') >= ?
+GROUP BY we.exercise_id, day
+ORDER BY id, day;
+`;
+
+/**
  * Completed working sets per primary muscle since a date (uses json_each over
  * the exercise's primary_muscles array). Params: since ISO date
  */

@@ -1,11 +1,14 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { newId } from '../lib/id';
-import { nowIso } from '../lib/dates';
+import { nowIso, todayStr } from '../lib/dates';
+import { Unit } from '../lib/units';
+import { E1rmPoint, detectPlateau, stallContext } from '../lib/plateau';
 import {
   SCHEMA_VERSION,
   BEST_WEIGHT_SQL,
   CALORIE_DAYS_SQL,
   EXERCISE_PROGRESSION_SQL,
+  STALL_CANDIDATES_SQL,
   MUSCLE_EXERCISE_WEEKLY_SQL,
   MUSCLE_EXERCISES_SQL,
   MUSCLE_LAST_TRAINED_SQL,
@@ -523,6 +526,50 @@ export async function getExerciseProgression(
   db: SQLiteDatabase, exerciseId: string,
 ): Promise<ProgressionRow[]> {
   return db.getAllAsync<ProgressionRow>(EXERCISE_PROGRESSION_SQL, exerciseId);
+}
+
+export type StalledLift = { id: string; name: string; stalledSince: string; context: string | null };
+
+/**
+ * Every stalled lift with its cross-domain context sentence. Detection (pure,
+ * tested in src/lib/plateau.ts) runs on each exercise's per-session e1RM series;
+ * calorie + weigh-in windows are fetched once and shared across the annotations.
+ * Sorted longest-stalled first.
+ */
+export async function getStalledLifts(
+  db: SQLiteDatabase, kcalTarget: number | null, unit: Unit,
+): Promise<StalledLift[]> {
+  const since = todayStr(new Date(Date.now() - 90 * 86400000));
+  const rows = await db.getAllAsync<{ id: string; name: string; day: string; est1rm: number }>(
+    STALL_CANDIDATES_SQL, since);
+
+  const byId = new Map<string, { name: string; points: E1rmPoint[] }>();
+  for (const r of rows) {
+    let g = byId.get(r.id);
+    if (!g) { g = { name: r.name, points: [] }; byId.set(r.id, g); }
+    g.points.push({ date: r.day, e1rm: r.est1rm });
+  }
+
+  const stalled: { id: string; name: string; stalledSince: string }[] = [];
+  byId.forEach((g, id) => {
+    const p = detectPlateau(g.points);
+    if (p) stalled.push({ id, name: g.name, stalledSince: p.stalledSince });
+  });
+  if (stalled.length === 0) return [];
+
+  const calorieDays = await db.getAllAsync<{ date: string; kcal: number }>(
+    'SELECT date, SUM(kcal) AS kcal FROM calorie_entries GROUP BY date');
+  const weighIns = await db.getAllAsync<{ date: string; weight_kg: number }>(
+    'SELECT date, weight_kg FROM weigh_ins ORDER BY date');
+
+  return stalled
+    .map((s) => ({
+      ...s,
+      context: stallContext({
+        stalledSince: s.stalledSince, unit, kcalTarget, calorieDays, weighIns,
+      }),
+    }))
+    .sort((a, b) => a.stalledSince.localeCompare(b.stalledSince));
 }
 
 export async function getMuscleSets(db: SQLiteDatabase, sinceIso: string): Promise<MuscleSetsRow[]> {
