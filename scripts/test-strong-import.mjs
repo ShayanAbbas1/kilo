@@ -1,9 +1,9 @@
-// `node scripts/test-strong-import.mjs` — Strong CSV parse → match → plan → insert
+// `node scripts/test-strong-import.mjs` — Strong/Hevy CSV parse → match → plan → insert
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { SCHEMA_SQL, PREV_SETS_SQL } from '../src/db/sql.ts';
 import {
-  parseStrongCsv, buildMatcher, buildImportPlan, inferEquipment,
+  parseStrongCsv, parseHevyCsv, parseWorkoutCsv, buildMatcher, buildImportPlan, inferEquipment,
 } from '../src/lib/strong-import.ts';
 
 // Mimics a real export: semicolon delimiter, every field quoted, Rest Timer and
@@ -52,6 +52,58 @@ assert.equal(durLegs.finishedAt, durLegs.startedAt);
 
 // a multi-line quoted note's continuation "row" is skipped, not a crash
 assert.equal(parseStrongCsv(CSV + '\r\n"";"garbage note tail";"";"";"";"";"";"";"";"";"";"";""').length, 2);
+
+// a newline INSIDE a quoted note stays part of the note (quote-aware record splitting)
+{
+  const multi = parseStrongCsv(CSV.replace('"slow eccentric"', '"slow\neccentric"'));
+  assert.equal(multi[0].exercises[1].notes, 'slow\neccentric');
+}
+
+// ---------- Hevy ----------
+
+const HEVY_CSV = [
+  '"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_lbs","reps","distance_miles","duration_seconds","rpe"',
+  '"Upper","28 Mar 2025, 17:29","28 Mar 2025, 18:52","great session","Bench Press (Barbell)","0","paused reps","0","warmup","45","10","","",""',
+  '"Upper","28 Mar 2025, 17:29","28 Mar 2025, 18:52","great session","Bench Press (Barbell)","0","paused reps","1","normal","135","8","","","8.5"',
+  '"Upper","28 Mar 2025, 17:29","28 Mar 2025, 18:52","great session","Seated Row (Cable)","0","","0","normal","120","10","","",""',
+  '"Upper","28 Mar 2025, 17:29","28 Mar 2025, 18:52","great session","Lateral Raise (Dumbbell)","","","0","dropset","20","15","","",""',
+  '"Upper","28 Mar 2025, 17:29","28 Mar 2025, 18:52","great session","Running","","","0","normal","","","1.5","600",""',
+  '"Legs","2025-04-01T10:00:00Z","2025-04-01T11:00:00Z","","Squat (Barbell)","","","0","failure","225","5","","",""',
+].join('\n');
+
+const hevy = parseHevyCsv(HEVY_CSV);
+assert.equal(hevy.length, 2);
+const [upper, hlegs] = hevy;
+assert.equal(upper.id, 'hevy_28 Mar 2025, 17:29');
+assert.equal(upper.name, 'Upper');
+assert.equal(upper.notes, 'great session');
+assert.equal(
+  new Date(upper.finishedAt).getTime() - new Date(upper.startedAt).getTime(), 83 * 60000);
+assert.equal(upper.exercises.length, 3); // Running (no weight, no reps) dropped
+const [bench, row, lateral] = upper.exercises;
+assert.equal(bench.notes, 'paused reps');
+assert.deepEqual(bench.sets.map((s) => s.setType), ['warmup', 'working']);
+assert.equal(bench.sets[0].weightKg, 20.412); // 45 lb → kg (weight_lbs header)
+assert.equal(bench.sets[1].rpe, 8.5);
+// superset_id 0 chains Bench → Seated Row; Lateral Raise has none
+assert.equal(bench.supersetWithNext, true);
+assert.equal(row.supersetWithNext, false);
+assert.equal(lateral.supersetWithNext, false);
+assert.equal(lateral.sets[0].setType, 'working'); // dropset counts as working
+// ISO start_time variant
+assert.equal(hlegs.startedAt, '2025-04-01T10:00:00.000Z');
+assert.equal(hlegs.exercises[0].sets[0].setType, 'failure');
+
+// the superset flag flows into the plan
+{
+  const p = buildImportPlan(hevy, () => 'X');
+  assert.deepEqual(p.workout_exercises.map((we) => we.superset_with_next), [1, 0, 0, 0]);
+}
+
+// header sniffing
+assert.equal(parseWorkoutCsv(HEVY_CSV).source, 'hevy');
+assert.equal(parseWorkoutCsv(CSV).source, 'strong');
+assert.throws(() => parseWorkoutCsv('a,b,c\n1,2,3'), /Not a Strong or Hevy/);
 
 // lbs header converts to kg
 const lbsCsv = CSV.replace('"Weight (kg)"', '"Weight (lbs)"');

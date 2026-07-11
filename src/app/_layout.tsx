@@ -28,7 +28,7 @@ export default function RootLayout() {
             <Stack.Screen name="report" options={{ presentation: 'modal', title: 'Weekly Report' }} />
             <Stack.Screen
               name="import-strong"
-              options={{ presentation: 'modal', title: 'Import from Strong' }}
+              options={{ presentation: 'modal', title: 'Import Workouts' }}
             />
           </Stack>
         </SettingsProvider>

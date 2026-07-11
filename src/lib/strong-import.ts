@@ -1,7 +1,9 @@
 /**
- * Import workout history from a Strong app CSV export.
+ * Import workout history from a Strong or Hevy app CSV export.
  * Pure parsing/matching/planning — no expo imports, so scripts/test-strong-import.mjs
  * can run it under node. DB insertion lives in src/db/queries.ts (importStrongWorkouts).
+ * parseWorkoutCsv() sniffs the header and dispatches to the right parser; both emit
+ * the same StrongWorkout shape so matching/planning/UI are shared.
  */
 
 export type StrongSet = {
@@ -12,7 +14,13 @@ export type StrongSet = {
   setType: 'warmup' | 'working' | 'failure';
 };
 
-export type StrongExercise = { name: string; notes: string | null; sets: StrongSet[] };
+export type StrongExercise = {
+  name: string;
+  notes: string | null;
+  sets: StrongSet[];
+  /** Hevy only: chained with the next exercise (shared superset_id). */
+  supersetWithNext?: boolean;
+};
 
 export type StrongWorkout = {
   /** Deterministic id derived from the CSV's raw local datetime — the dedup key. */
@@ -25,6 +33,22 @@ export type StrongWorkout = {
 };
 
 const LBS_TO_KG = 0.45359237;
+
+/** Split into records, honoring newlines inside quoted fields (multi-line notes). */
+function splitRecords(text: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let inQuotes = false;
+  for (const c of text) {
+    if (c === '"') { inQuotes = !inQuotes; cur += c; }
+    else if ((c === '\n' || c === '\r') && !inQuotes) {
+      if (cur.trim()) out.push(cur);
+      cur = '';
+    } else cur += c;
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
 
 /** Minimal quoted-CSV row splitter; Strong quotes every field. Handles "" escapes. */
 function splitRow(line: string, delim: string): string[] {
@@ -56,7 +80,7 @@ const num = (s: string | undefined): number | null => {
 const toIso = (local: string) => new Date(local.replace(' ', 'T')).toISOString();
 
 export function parseStrongCsv(text: string): StrongWorkout[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  const lines = splitRecords(text);
   if (!lines.length) throw new Error('Empty file');
   const delim = lines[0].includes(';') ? ';' : ',';
   const header = splitRow(lines[0], delim);
@@ -134,6 +158,115 @@ export function parseStrongCsv(text: string): StrongWorkout[] {
     .map(({ exByName: _, ...w }) => ({ ...w, exercises: w.exercises.filter((e) => e.sets.length) }))
     .filter((w) => w.exercises.length)
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+}
+
+// ---------- Hevy ----------
+
+const MONTHS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/** Hevy exports "28 Mar 2025, 17:29" (local) or ISO; Hermes can't Date.parse the former. */
+function parseHevyDate(s: string): Date | null {
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const t = Date.parse(s);
+    return isNaN(t) ? null : new Date(t);
+  }
+  const m = /^(\d{1,2}) ([A-Za-z]{3}) (\d{4}),? (\d{1,2}):(\d{2})/.exec(s.trim());
+  const mon = m ? MONTHS[m[2].toLowerCase()] : undefined;
+  if (!m || mon === undefined) return null;
+  return new Date(+m[3], mon, +m[1], +m[4], +m[5]);
+}
+
+// normal/dropset (and their numeric codes) count as working sets
+const HEVY_SET_TYPES: Record<string, StrongSet['setType']> = {
+  warmup: 'warmup', '2': 'warmup', failure: 'failure', '4': 'failure',
+};
+
+export function parseHevyCsv(text: string): StrongWorkout[] {
+  const lines = splitRecords(text);
+  if (!lines.length) throw new Error('Empty file');
+  const delim = lines[0].includes(';') ? ';' : ',';
+  const header = splitRow(lines[0], delim).map((h) => h.trim().toLowerCase());
+  const col = (name: string) => header.findIndex((h) => h.startsWith(name));
+  const iTitle = col('title');
+  const iStart = col('start_time');
+  const iEnd = col('end_time');
+  const iDesc = col('description');
+  const iEx = col('exercise_title');
+  const iSuperset = col('superset_id');
+  const iExNotes = col('exercise_notes');
+  const iType = col('set_type');
+  const iWeight = col('weight');
+  const iReps = col('reps');
+  const iRpe = col('rpe');
+  if (iStart < 0 || iEx < 0) throw new Error('Not a Hevy CSV export');
+  // the weight column is named for the account's unit: weight_kg or weight_lbs
+  const weightFactor = /lb/.test(header[iWeight] ?? '') ? LBS_TO_KG : 1;
+
+  type Ex = StrongExercise & { supersetId: string };
+  const workouts = new Map<string, StrongWorkout & { exByName: Map<string, Ex> }>();
+  for (const line of lines.slice(1)) {
+    const f = splitRow(line, delim);
+    const start = f[iStart]?.trim();
+    if (!start) continue;
+    let w = workouts.get(start);
+    if (!w) {
+      const started = parseHevyDate(start);
+      if (!started) continue; // multi-line-note continuation rows land here
+      const finished = parseHevyDate(f[iEnd]?.trim() ?? '') ?? started;
+      w = {
+        id: `hevy_${start}`,
+        startedAt: started.toISOString(),
+        finishedAt: finished.toISOString(),
+        name: f[iTitle]?.trim() || null,
+        notes: f[iDesc]?.trim() || null,
+        exercises: [],
+        exByName: new Map(),
+      };
+      workouts.set(start, w);
+    }
+    const exName = f[iEx]?.trim();
+    if (!exName) continue;
+    let ex = w.exByName.get(exName);
+    if (!ex) {
+      ex = { name: exName, notes: f[iExNotes]?.trim() || null, sets: [], supersetId: f[iSuperset]?.trim() ?? '' };
+      w.exByName.set(exName, ex);
+      w.exercises.push(ex);
+    }
+    const weight = num(f[iWeight]);
+    const reps = num(f[iReps]);
+    if (weight === null && reps === null) continue; // cardio / duration-only rows
+    ex.sets.push({
+      position: ex.sets.length + 1,
+      weightKg: weight === null ? null : Math.round(weight * weightFactor * 1000) / 1000,
+      reps: reps === null ? null : Math.round(reps),
+      rpe: num(f[iRpe]),
+      setType: HEVY_SET_TYPES[f[iType]?.trim().toLowerCase() ?? ''] ?? 'working',
+    });
+  }
+
+  return [...workouts.values()]
+    .map(({ exByName: _, ...w }) => {
+      const exercises = w.exercises.filter((e) => e.sets.length) as Ex[];
+      exercises.forEach((e, i) => {
+        e.supersetWithNext = !!e.supersetId && exercises[i + 1]?.supersetId === e.supersetId;
+      });
+      return { ...w, exercises };
+    })
+    .filter((w) => w.exercises.length)
+    .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+}
+
+/** Sniff the header and dispatch: Strong and Hevy exports both come out as StrongWorkout[]. */
+export function parseWorkoutCsv(text: string): { source: 'strong' | 'hevy'; workouts: StrongWorkout[] } {
+  const header = (splitRecords(text)[0] ?? '').toLowerCase();
+  if (header.includes('exercise_title')) return { source: 'hevy', workouts: parseHevyCsv(text) };
+  if (header.includes('exercise name') && header.includes('set order')) {
+    return { source: 'strong', workouts: parseStrongCsv(text) };
+  }
+  throw new Error('Not a Strong or Hevy CSV export');
 }
 
 // ---------- exercise-name matching ----------
@@ -216,7 +349,7 @@ export function buildImportPlan(
       const weId = `${w.id}_e${i + 1}`;
       plan.workout_exercises.push({
         id: weId, workout_id: w.id, exercise_id: resolve(ex.name),
-        position: i + 1, notes: ex.notes, superset_with_next: 0,
+        position: i + 1, notes: ex.notes, superset_with_next: ex.supersetWithNext ? 1 : 0,
       });
       for (const s of ex.sets) {
         plan.sets.push({
