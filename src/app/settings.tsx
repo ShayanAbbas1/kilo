@@ -165,10 +165,10 @@ export default function SettingsScreen() {
       <SectionTitle>Import</SectionTitle>
       <Card style={{ gap: Spacing.two }}>
         <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-          Coming from Strong? Bring your workout history — it merges with your Kilo data.
+          Coming from Strong or Hevy? Bring your workout history — it merges with your Kilo data.
         </Text>
         <Button
-          title="Import from Strong (CSV)"
+          title="Import from Strong / Hevy (CSV)"
           kind="secondary"
           onPress={() => router.push('/import-strong')}
           disabled={busy}

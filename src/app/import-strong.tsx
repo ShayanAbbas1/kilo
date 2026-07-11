@@ -13,7 +13,7 @@ import {
   createCustomExercise, getExistingWorkoutIds, importStrongWorkouts, listExerciseRefs,
 } from '@/db/queries';
 import {
-  StrongWorkout, buildImportPlan, buildMatcher, inferEquipment, parseStrongCsv,
+  StrongWorkout, buildImportPlan, buildMatcher, inferEquipment, parseWorkoutCsv,
 } from '@/lib/strong-import';
 import { Chip, MUSCLES } from './exercise-picker';
 
@@ -39,7 +39,7 @@ export default function ImportStrongScreen() {
     setBusy(true);
     try {
       const text = await FileSystem.readAsStringAsync(res.assets[0].uri);
-      const workouts = parseStrongCsv(text);
+      const { workouts } = parseWorkoutCsv(text);
       const refs = await listExerciseRefs(db);
       const refName = new Map(refs.map((r) => [r.id, r.name]));
       const match = buildMatcher(refs);
@@ -103,12 +103,14 @@ export default function ImportStrongScreen() {
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
       <Card style={{ gap: Spacing.two }}>
         <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-          In Strong: Profile → gear icon → Export Strong Data. Pick the .csv file here.
-          Your existing Kilo data is never changed — Strong workouts are added alongside it,
-          and re-importing the same file skips what is already in.
+          In Strong: Profile → gear icon → Export Strong Data.{'\n'}
+          In Hevy: Profile → gear icon → Export & Import Data → Export Workouts.{'\n'}
+          Pick the .csv file here. Your existing Kilo data is never changed — imported
+          workouts are added alongside it, and re-importing the same file skips what is
+          already in.
         </Text>
         <Button
-          title={parsed ? 'Pick a different file' : 'Pick Strong CSV'}
+          title={parsed ? 'Pick a different file' : 'Pick CSV export'}
           kind={parsed ? 'secondary' : 'primary'}
           onPress={pickFile}
           disabled={busy}
