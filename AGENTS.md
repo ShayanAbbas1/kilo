@@ -34,6 +34,8 @@ Free, local-first workout + body-weight + calorie tracker. Android-first via Exp
 
 ## Conventions
 
+- **Every change lands via PR.** Create a branch, open a PR, the owner reviews and merges — never push directly to `main`. Merging to `main` is what triggers the OTA publish, so a merged PR *is* a release.
+- **README's "Get the app" APK link must stay live.** Any PR with a native change (new APK required) updates that link to the new build's artifact URL in the same PR.
 - FEATURES.md is the spec of record. Any commit that ships, changes, or defers a feature updates FEATURES.md **in the same commit** — check the box, one line on what shipped. Nobody will ask for this; it's part of "done".
 - This rule propagates: when dispatching a subagent or workflow to build a feature, its task prompt must include the FEATURES.md edit and end with "read AGENTS.md first".
 - Weights in kg (REAL), dates as ISO-8601 strings, all in SQLite
