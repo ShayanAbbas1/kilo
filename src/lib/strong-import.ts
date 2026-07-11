@@ -46,8 +46,9 @@ function splitRow(line: string, delim: string): string[] {
   return out;
 }
 
+// comma-decimal locales ("82,5") export with a semicolon delimiter, so a bare replace is safe
 const num = (s: string | undefined): number | null => {
-  const n = parseFloat(s ?? '');
+  const n = parseFloat((s ?? '').replace(',', '.'));
   return isNaN(n) ? null : n;
 };
 
@@ -81,8 +82,11 @@ export function parseStrongCsv(text: string): StrongWorkout[] {
     if (!date) continue;
     let w = workouts.get(date);
     if (!w) {
+      // a multi-line quoted note produces continuation "rows" with garbage here — skip them
+      if (isNaN(Date.parse(date.replace(' ', 'T')))) continue;
       const startedAt = toIso(date);
-      const durSec = num(f[iDur]) ?? 0;
+      // some Strong versions export "58m"/"1h 3m" instead of seconds — better no duration than garbage
+      const durSec = /^\d+(\.\d+)?$/.test(f[iDur] ?? '') ? parseFloat(f[iDur]) : 0;
       w = {
         id: `strong_${date}`,
         startedAt,
@@ -109,9 +113,10 @@ export function parseStrongCsv(text: string): StrongWorkout[] {
       if (note) ex.notes = ex.notes ? `${ex.notes}\n${note}` : note;
       continue;
     }
-    // set rows: numeric order, or W/F-prefixed (warmup/failure) in some Strong versions
+    // set rows: numeric order, or W/F-prefixed (warmup/failure) in some Strong versions.
+    // Anything else (e.g. "D" drop sets) imports as a working set — the weight/reps
+    // guard below already drops pseudo-rows, and losing training data is worse.
     const setType = /^w/i.test(order) ? 'warmup' : /^f/i.test(order) ? 'failure' : 'working';
-    if (setType === 'working' && !/^\d+$/.test(order)) continue; // unknown pseudo-row
     const weight = num(f[iWeight]);
     const reps = num(f[iReps]);
     if (weight === null && reps === null) continue;

@@ -17,6 +17,7 @@ const CSV = [
   '"1";"2026-01-30 19:37:30";"Legs";"2619";"Back Extension";"Note";"";"";"";"";"";"slow eccentric";"felt good"',
   '"1";"2026-01-30 19:37:30";"Legs";"2619";"Back Extension";"1";"";"12";"";"";"";"";"felt good"',
   '"2";"2026-02-01 08:00:00";"Push";"3600";"Leg Press";"1";"100";"5";"";"";"";"";""',
+  '"2";"2026-02-01 08:00:00";"Push";"3600";"Leg Press";"D";"82,5";"3";"";"";"";"";""', // drop set, comma decimal
 ].join('\r\n');
 
 const workouts = parseStrongCsv(CSV);
@@ -39,6 +40,18 @@ assert.equal(back.notes, 'slow eccentric'); // Note pseudo-row → exercise note
 assert.equal(back.sets[0].weightKg, null); // bodyweight set keeps null weight
 assert.equal(back.sets[0].reps, 12);
 assert.equal(push.exercises[0].sets[0].weightKg, 100);
+// "D" drop set kept as a working set; comma decimal parsed
+assert.equal(push.exercises[0].sets.length, 2);
+assert.equal(push.exercises[0].sets[1].setType, 'working');
+assert.equal(push.exercises[0].sets[1].weightKg, 82.5);
+
+// "58m"-style duration → no duration rather than garbage
+const durCsv = CSV.replaceAll('"2619"', '"43m 39s"');
+const durLegs = parseStrongCsv(durCsv)[0];
+assert.equal(durLegs.finishedAt, durLegs.startedAt);
+
+// a multi-line quoted note's continuation "row" is skipped, not a crash
+assert.equal(parseStrongCsv(CSV + '\r\n"";"garbage note tail";"";"";"";"";"";"";"";"";"";"";""').length, 2);
 
 // lbs header converts to kg
 const lbsCsv = CSV.replace('"Weight (kg)"', '"Weight (lbs)"');
@@ -76,7 +89,7 @@ const resolve = (name) => ({ 'Hack Squat': 'Hack_Squat' })[name] ?? `custom_${na
 const plan = buildImportPlan(workouts, resolve);
 assert.equal(plan.workouts.length, 2);
 assert.equal(plan.workout_exercises.length, 3);
-assert.equal(plan.sets.length, 5);
+assert.equal(plan.sets.length, 6);
 // deterministic ids → re-parsing the same file yields the identical plan
 assert.deepEqual(plan, buildImportPlan(parseStrongCsv(CSV), resolve));
 
@@ -104,7 +117,7 @@ const importPlan = (p) => {
 };
 assert.equal(importPlan(plan), 2);
 assert.equal(importPlan(plan), 0); // re-import is a no-op
-assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sets').get().n, 5);
+assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sets').get().n, 6);
 
 // imported history feeds the ghost-values query (completed sets, finished workout)
 const prev = db.prepare(PREV_SETS_SQL).all('Hack_Squat', 'Hack_Squat');

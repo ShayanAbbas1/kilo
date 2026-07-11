@@ -68,12 +68,16 @@ export default function ImportStrongScreen() {
   };
 
   const doImport = async () => {
-    if (!parsed) return;
+    if (!parsed || busy) return;
     setBusy(true);
     try {
       const resolution = new Map(parsed.matched.map((m) => [m.name, m.exerciseId]));
+      // customs created by an earlier failed attempt are reused by name, not re-created
+      const refs = await listExerciseRefs(db);
+      const byName = new Map(refs.map((r) => [r.name.trim().toLowerCase(), r.id]));
       for (const name of parsed.unmatched) {
-        const id = await createCustomExercise(db, name, muscleFor[name], inferEquipment(name));
+        const id = byName.get(name.trim().toLowerCase())
+          ?? await createCustomExercise(db, name, muscleFor[name], inferEquipment(name));
         resolution.set(name, id);
       }
       const plan = buildImportPlan(parsed.workouts, (name) => resolution.get(name)!);
