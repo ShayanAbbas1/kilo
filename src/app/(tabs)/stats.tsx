@@ -67,6 +67,16 @@ export default function StatsTab() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
+      <Pressable onPress={() => router.push('/report')} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+        <Card style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: Spacing.three,
+        }}>
+          <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>📅 Weekly report</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 18 }}>›</Text>
+        </Card>
+      </Pressable>
+
       <SectionTitle>The Trendline — 12 weeks, is it working?</SectionTitle>
       <Card>
         {trend && (

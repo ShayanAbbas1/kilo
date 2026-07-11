@@ -6,7 +6,8 @@ import {
   WORKOUT_HISTORY_DAY_SQL,
   EXERCISE_PROGRESSION_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
-  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MIGRATION_V2_SQL, MIGRATION_V3_SQL,
+  MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MUSCLE_LAST_TRAINED_SQL,
+  MIGRATION_V2_SQL, MIGRATION_V3_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -170,6 +171,12 @@ assert.ok(!prs.some((r) => r.weight_kg === 50), 'the very first working set is n
 assert.ok(!prs.some((r) => r.weight_kg === 20), 'warmups never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 62.5), 'incomplete sets never appear');
 assert.ok(!prs.some((r) => r.weight_kg === 100), 'sets from an unfinished workout never appear');
+
+// --- weekly report: last-trained day per muscle, all-time, active workout excluded ---
+const lastTrained = db.prepare(MUSCLE_LAST_TRAINED_SQL).all();
+const chestLast = lastTrained.find((r) => r.muscle === 'chest');
+assert.equal(chestLast.last_trained, '2026-06-27', 'most recent FINISHED bench session, not the active w3');
+assert.equal(lastTrained.find((r) => r.muscle === 'quadriceps'), undefined, 'squat never trained -> no row');
 
 // --- supersets: flag on a workout_exercise, read back through the app's SELECT ---
 db.prepare('UPDATE workout_exercises SET superset_with_next = 1 WHERE id = ?').run('we1');
