@@ -56,6 +56,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Weigh-in delta vs 7-day average (▲▼) on Body tab
 - [x] Edit a finished workout (reopen from history detail)
 - [x] Weekly summary (workouts + tonnage) on Workout tab
+- [x] Cold-start Workout tab: with no routines, "Start from a recent workout" lists the last 3 finished sessions (tap to re-run — exercises/target sets/supersets copied); with no history either, three template cards (Upper/Lower/Full Body, seed exercises by name). Both honor the active-workout guard.
 - [x] Supersets: ⛓ toggle on each exercise links it to the next (chains fall out naturally); linked cards share a tint left-border and rest is skipped mid-chain. Survives save/start-as-routine.
 - [x] Plate calculator (`/plates` modal: per-side breakdown from a target weight, greedy from standard plate sets; ⚖ button on each exercise in the active workout, prefilled from last logged/ghost weight)
 - [x] RPE/RIR per set (RPE 0–10, optional field per set, shown when enabled in settings; always shown in history if present)

@@ -2,6 +2,10 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-18 — Cold-start Workout tab (same PR)
+
+Owner has no routines → empty home screen felt dead. Strong-style fix, opus subagent build: with no routines the tab lists the last 3 finished workouts ("Start from a recent workout" — `startWorkoutFromPast` copies exercises in position order, target sets = non-warmup count, supersets preserved, via extracted `WORKOUT_COPY_EXERCISES_SQL` now shared with `createRoutineFromWorkout`); with no history either, three template cards (Upper/Lower/Full Body) whose exercise names are verbatim seed names (verified against `src/data/exercises.json` — there is no plain "Bench Press"/"Deadlift" in free-exercise-db; it's "Barbell Bench Press - Medium Grip" etc.), resolved to ids at tap time via `resolveExerciseIdsByName` (SQL `IN` doesn't preserve order — JS reorders, unresolved skipped) → `startWorkoutFromExercises(ids, 3)`. All start paths share the active-workout guard. New test-db assertions cover copy-from-past ordering/target-sets/superset + name resolution.
+
 ## 2026-07-18 — Space Grotesk (same PR)
 
 Owner disliked the system font; wanted Dank Mono — declined (commercial license, public repo = redistribution) and offered free options; owner picked Space Grotesk. Implementation notes:

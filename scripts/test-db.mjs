@@ -7,7 +7,7 @@ import {
   EXERCISE_PROGRESSION_SQL, STALL_CANDIDATES_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
   MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MUSCLE_LAST_TRAINED_SQL,
-  MIGRATION_V2_SQL, MIGRATION_V3_SQL,
+  MIGRATION_V2_SQL, MIGRATION_V3_SQL, WORKOUT_COPY_EXERCISES_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -313,5 +313,32 @@ assert.equal(recentEx.length, 1, 'bench used across w1/w2/w3 dedupes to one row;
 assert.equal(recentEx[0].id, 'bench', 'bench is the only exercise with workout history');
 assert.equal(recentEx[0].last_used, '2026-07-01T10:00:00Z',
   'most recent use is w3, the active workout — active workouts count for recency');
+
+// --- quick start: copy a past workout's exercises (order, set count, superset flag) ---
+// A two-exercise finished workout with a superset link on the first exercise.
+w('w4', '2026-07-05T10:00:00Z', '2026-07-05T11:00:00Z');
+we('we4a', 'w4', 'bench', 1);
+we('we4b', 'w4', 'squat', 2);
+db.prepare('UPDATE workout_exercises SET superset_with_next = 1 WHERE id = ?').run('we4a');
+set('s8', 'we4a', 1, 20, 12, 'warmup', 1);   // warmup — excluded from target set count
+set('s9', 'we4a', 2, 50, 5, 'working', 1);
+set('s10', 'we4a', 3, 55, 5, 'working', 0);  // incomplete — still counts toward target sets
+set('s11', 'we4b', 1, 80, 5, 'working', 1);
+
+const copy = db.prepare(WORKOUT_COPY_EXERCISES_SQL).all('w4');
+assert.deepEqual(copy.map((r) => r.exercise_id), ['bench', 'squat'], 'exercises copied in position order');
+assert.equal(copy[0].n, 2, 'target sets = non-warmup set count (working incl. incomplete), warmup excluded');
+assert.equal(copy[0].superset_with_next, 1, 'superset flag preserved on the copy');
+assert.equal(copy[1].superset_with_next, 0, 'non-superset exercise stays unlinked');
+
+// --- template name resolution: ids in input order, missing names skipped ---
+// Mirrors resolveExerciseIdsByName: SQL IN returns arbitrary order, JS reorders to input.
+const names = ['Squat', 'Nonexistent Lift', 'Bench Press'];
+const resRows = db.prepare(
+  `SELECT id, name FROM exercises WHERE name IN (${names.map(() => '?').join(',')})`,
+).all(...names);
+const byName = new Map(resRows.map((r) => [r.name, r.id]));
+const resolved = names.map((n) => byName.get(n)).filter((id) => id != null);
+assert.deepEqual(resolved, ['squat', 'bench'], 'resolved ids follow input order, missing name skipped');
 
 console.log('test-db: all assertions passed');

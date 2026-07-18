@@ -4,17 +4,38 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Text } from '@/components/text';
-import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
+import { Button, Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  PeriodSummary, RoutineRow, Workout,
-  createRoutine, deleteRoutine, getActiveWorkout, getPeriodSummary, listRoutines,
-  startWorkout, startWorkoutFromRoutine,
+  HistoryRow, PeriodSummary, RoutineRow, Workout,
+  createRoutine, deleteRoutine, getActiveWorkout, getHistory, getPeriodSummary, listRoutines,
+  resolveExerciseIdsByName, startWorkout, startWorkoutFromExercises, startWorkoutFromPast,
+  startWorkoutFromRoutine,
 } from '@/db/queries';
 import { formatDateTime, startOfWeekIso } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
 import { weightLabel } from '@/lib/units';
+
+// Pre-built cold-start templates. Names are verbatim from the free-exercise-db seed
+// (src/data/exercises.json) — resolved to ids at tap time, unresolved ones skipped.
+const TEMPLATES: { name: string; exercises: string[] }[] = [
+  {
+    name: 'Upper Body',
+    exercises: ['Barbell Bench Press - Medium Grip', 'Bent Over Barbell Row',
+      'Barbell Shoulder Press', 'Wide-Grip Lat Pulldown', 'Barbell Curl', 'Triceps Pushdown'],
+  },
+  {
+    name: 'Lower Body',
+    exercises: ['Barbell Squat', 'Romanian Deadlift', 'Leg Press',
+      'Lying Leg Curls', 'Standing Calf Raises'],
+  },
+  {
+    name: 'Full Body',
+    exercises: ['Barbell Squat', 'Barbell Bench Press - Medium Grip', 'Barbell Deadlift',
+      'Pullups', 'Barbell Shoulder Press'],
+  },
+];
 
 export default function WorkoutTab() {
   const db = useSQLiteContext();
@@ -22,15 +43,25 @@ export default function WorkoutTab() {
   const { unit } = useSettings();
   const [active, setActive] = useState<Workout | null>(null);
   const [routines, setRoutines] = useState<RoutineRow[]>([]);
+  const [recent, setRecent] = useState<HistoryRow[]>([]);
   const [week, setWeek] = useState<PeriodSummary | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       getActiveWorkout(db).then(setActive);
       listRoutines(db).then(setRoutines);
+      getHistory(db, 3).then(setRecent);
       getPeriodSummary(db, startOfWeekIso()).then(setWeek);
     }, [db]),
   );
+
+  const guardActive = () => {
+    if (active) {
+      Alert.alert('Workout in progress', 'Finish or discard it before starting another.');
+      return true;
+    }
+    return false;
+  };
 
   const start = async () => {
     const id = await startWorkout(db);
@@ -38,11 +69,25 @@ export default function WorkoutTab() {
   };
 
   const startFromRoutine = async (r: RoutineRow) => {
-    if (active) {
-      Alert.alert('Workout in progress', 'Finish or discard it before starting another.');
+    if (guardActive()) return;
+    const id = await startWorkoutFromRoutine(db, r.id);
+    router.push(`/workout/${id}`);
+  };
+
+  const startFromPast = async (h: HistoryRow) => {
+    if (guardActive()) return;
+    const id = await startWorkoutFromPast(db, h.id);
+    router.push(`/workout/${id}`);
+  };
+
+  const startFromTemplate = async (t: (typeof TEMPLATES)[number]) => {
+    if (guardActive()) return;
+    const ids = await resolveExerciseIdsByName(db, t.exercises);
+    if (!ids.length) {
+      Alert.alert("Can't start", 'None of those exercises are in your library.');
       return;
     }
-    const id = await startWorkoutFromRoutine(db, r.id);
+    const id = await startWorkoutFromExercises(db, ids, 3);
     router.push(`/workout/${id}`);
   };
 
@@ -96,11 +141,45 @@ export default function WorkoutTab() {
         </View>
       }
       ListEmptyComponent={
-        <EmptyState
-          icon="📋"
-          title="No routines yet"
-          hint="Save a finished workout as a routine to start it with one tap."
-        />
+        recent.length > 0 ? (
+          <View style={{ gap: Spacing.two }}>
+            <SectionTitle>Start from a recent workout</SectionTitle>
+            {recent.map((h) => (
+              <Pressable
+                key={h.id}
+                onPress={() => startFromPast(h)}
+                style={({ pressed }) => [
+                  styles.routineCard,
+                  { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },
+                ]}>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
+                  {h.name ?? formatDateTime(h.started_at)}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                  {h.exercise_count} exercise{h.exercise_count === 1 ? '' : 's'} · {h.set_count} set{h.set_count === 1 ? '' : 's'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={{ gap: Spacing.two }}>
+            <SectionTitle>Start with a template</SectionTitle>
+            {TEMPLATES.map((t) => (
+              <Pressable
+                key={t.name}
+                onPress={() => startFromTemplate(t)}
+                style={({ pressed }) => [
+                  styles.routineCard,
+                  { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },
+                ]}>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 13 }} numberOfLines={2}>
+                  {t.exercises.join(', ')}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )
       }
       renderItem={({ item }) => (
         <Pressable
