@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { HistoryRow, WorkoutDay, getHistory, getHistoryForDay, getWorkoutDates } from '@/db/queries';
+import { HistoryRow, WorkoutDay, deleteWorkout, getHistory, getHistoryForDay, getWorkoutDates } from '@/db/queries';
 import { monthGrid, weekStreaks } from '@/lib/calendar';
 import { durationLabel, formatDay, formatDateTime, todayStr } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
@@ -31,17 +31,30 @@ export default function HistoryTab() {
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      getHistory(db).then(setRows);
-      getWorkoutDates(db).then((days) => {
-        setWorkoutDays(days);
-        // Deleting a day's only workout leaves a dangling filter — clear it once the day is gone.
-        setSelectedDay((cur) =>
-          cur && !days.some((d) => todayStr(new Date(d.started_at)) === cur) ? null : cur);
-      });
-    }, [db]),
-  );
+  const refresh = useCallback(() => {
+    getHistory(db).then(setRows);
+    getWorkoutDates(db).then((days) => {
+      setWorkoutDays(days);
+      // Deleting a day's only workout leaves a dangling filter — clear it once the day is gone.
+      setSelectedDay((cur) =>
+        cur && !days.some((d) => todayStr(new Date(d.started_at)) === cur) ? null : cur);
+    });
+  }, [db]);
+
+  useFocusEffect(refresh);
+
+  const onDelete = (item: HistoryRow) => {
+    Alert.alert('Delete workout?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          await deleteWorkout(db, item.id);
+          refresh();
+        },
+      },
+    ]);
+  };
 
   const daysMap = useMemo(() => {
     const m = new Map<string, WorkoutDay[]>();
@@ -157,6 +170,7 @@ export default function HistoryTab() {
       renderItem={({ item }) => (
         <Pressable
           onPress={() => router.push(`/history/${item.id}`)}
+          onLongPress={() => onDelete(item)}
           style={({ pressed }) => [
             styles.card,
             { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },
