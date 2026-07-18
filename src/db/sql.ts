@@ -383,6 +383,17 @@ ORDER BY last_used DESC
 LIMIT ?;
 `;
 
+/**
+ * A workout's exercises in position order, each with its non-warmup set count and
+ * superset flag — the source rows for copying a workout into a routine or a new
+ * "quick start" workout. Param: workout id.
+ */
+export const WORKOUT_COPY_EXERCISES_SQL = `
+SELECT we.exercise_id, we.position, we.superset_with_next,
+  (SELECT COUNT(*) FROM sets s WHERE s.workout_exercise_id = we.id AND s.set_type != 'warmup') AS n
+FROM workout_exercises we WHERE we.workout_id = ? ORDER BY we.position;
+`;
+
 /** History list: finished workouts with set counts + tonnage. Params: limit */
 export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,

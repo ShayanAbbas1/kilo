@@ -1,18 +1,45 @@
+import {
+  SpaceGrotesk_300Light, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold, useFonts,
+} from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { useColorScheme } from 'react-native';
 
+import { Colors } from '@/constants/theme';
 import { DB_NAME, migrate } from '@/db';
 import { SettingsProvider } from '@/lib/settings-context';
 import '@/lib/rest-notification'; // registers notification handler + Android channel once
 
+// nav chrome (headers, tab bar) on the app palette instead of react-navigation stock
+const navTheme = (base: typeof DefaultTheme, c: typeof Colors.light | typeof Colors.dark) => ({
+  ...base,
+  colors: {
+    ...base.colors,
+    primary: c.tint,
+    background: c.background,
+    card: c.background,
+    text: c.text,
+    border: c.border,
+    notification: c.danger,
+  },
+});
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk_300Light, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold,
+  });
+  if (!fontsLoaded) return null; // brief blank on cold start beats a font swap flash
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider
+      value={colorScheme === 'dark'
+        ? navTheme(DarkTheme, Colors.dark)
+        : navTheme(DefaultTheme, Colors.light)}>
       <SQLiteProvider databaseName={DB_NAME} onInit={migrate}>
         <SettingsProvider>
-          <Stack>
+          <Stack screenOptions={{ headerTitleStyle: { fontFamily: 'SpaceGrotesk_700Bold' } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="workout/[id]" options={{ title: 'Workout' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />

@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Text } from '@/components/text';
+import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type ButtonKind = 'primary' | 'secondary' | 'danger';
@@ -17,17 +18,22 @@ export function Button({
 }) {
   const colors = useTheme();
   const bg = kind === 'primary' ? colors.tint : colors.backgroundElement;
-  const fg = kind === 'primary' ? '#fff' : kind === 'danger' ? colors.danger : colors.text;
+  const fg = kind === 'primary' ? colors.onTint : kind === 'danger' ? colors.danger : colors.text;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
+        {
+          backgroundColor: bg,
+          opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+          // hairline keeps secondary buttons visible on same-fill cards
+          borderColor: kind === 'primary' ? 'transparent' : colors.border,
+        },
         style,
       ]}>
-      <Text style={{ color: fg, fontWeight: '600', fontSize: 16 }}>{title}</Text>
+      <Text style={{ color: fg, fontWeight: '700', fontSize: 16, letterSpacing: 0.2 }}>{title}</Text>
     </Pressable>
   );
 }
@@ -35,7 +41,12 @@ export function Button({
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const colors = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.backgroundElement }, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+        style,
+      ]}>
       {children}
     </View>
   );
@@ -62,18 +73,17 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
     paddingHorizontal: Spacing.three,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: Spacing.three,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Type.label,
     marginBottom: Spacing.two,
     marginTop: Spacing.three,
   },

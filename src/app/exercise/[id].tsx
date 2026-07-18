@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { LineChart, Point } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
 import { Button, Card, SectionTitle } from '@/components/ui';
@@ -119,7 +120,9 @@ export default function ExerciseDetail() {
             <TextInput
               style={{
                 flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
-                color: colors.text, backgroundColor: colors.backgroundElement,
+                borderWidth: StyleSheet.hairlineWidth,
+                color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border,
+                fontFamily: 'SpaceGrotesk_400Regular',
               }}
               value={goalInput}
               onChangeText={setGoalInput}
@@ -189,7 +192,7 @@ export default function ExerciseDetail() {
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
+              <Text style={{ color: metric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {METRIC_LABEL[m]}
               </Text>
             </Pressable>

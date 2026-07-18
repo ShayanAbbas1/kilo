@@ -3,34 +3,53 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import { Platform } from 'react-native';
+import { Platform, TextStyle } from 'react-native';
 
+// Ember palette: warm-tinted surfaces + ember-orange brand tint. Backgrounds are
+// deliberately NOT pure black/white — dark is layered espresso (page → card →
+// selected, each a step lighter), light is warm paper with white cards.
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    tint: '#007AFF',
-    success: '#34C759',
-    successBg: '#E4F8EA',
-    danger: '#FF3B30',
-    accent: '#FF9500',
+    text: '#221D18',
+    background: '#FAF6F1', // warm paper page
+    backgroundElement: '#FFFFFF', // cards float on the paper
+    backgroundSelected: '#F2EAE0',
+    textSecondary: '#6E6862',
+    border: '#EAE1D6', // hairline card/input edges
+    tint: '#EA580C',
+    onTint: '#FFFFFF', // text on a tint-colored surface
+    success: '#2E9E4F',
+    successBg: '#E5F5E9',
+    danger: '#DE3730',
+    accent: '#0E9BD8', // cool counterweight to the orange tint (kcal line on the Trendline)
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    tint: '#0A84FF',
+    text: '#F5F1EC',
+    background: '#161210', // deep espresso, not stock black
+    backgroundElement: '#221C17',
+    backgroundSelected: '#332A22',
+    textSecondary: '#A69E96',
+    border: '#352C24',
+    tint: '#FF8A3C',
+    onTint: '#221204', // dark text on the bright ember button — higher contrast than white
     success: '#30D158',
     successBg: '#12351C',
-    danger: '#FF453A',
-    accent: '#FF9F0A',
+    danger: '#FF5C52',
+    accent: '#3BBDF8',
   },
 } as const;
+
+// Type scale: system font (Roboto/SF), consistent roles instead of ad-hoc sizes.
+export const Type = {
+  /** Big single stats: TDEE, tonnage, timers */
+  stat: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
+  /** Card/exercise titles */
+  title: { fontSize: 17, fontWeight: '700', letterSpacing: -0.2 },
+  body: { fontSize: 16 },
+  caption: { fontSize: 13 },
+  /** Uppercase section labels */
+  label: { fontSize: 12, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase' },
+} as const satisfies Record<string, TextStyle>;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

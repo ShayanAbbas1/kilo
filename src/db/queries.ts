@@ -19,6 +19,7 @@ import {
   PR_HISTORY_SQL,
   RECENT_EXERCISES_SQL,
   TOP_EXERCISES_SQL,
+  WORKOUT_COPY_EXERCISES_SQL,
   WEEKLY_KCAL_SQL,
   WEEKLY_TONNAGE_SQL,
   WEEKLY_WEIGHT_SQL,
@@ -439,10 +440,7 @@ export async function createRoutineFromWorkout(
   const routineId = newId();
   const exercises = await db.getAllAsync<
     { exercise_id: string; position: number; n: number; superset_with_next: number }
-  >(
-    `SELECT we.exercise_id, we.position, we.superset_with_next,
-       (SELECT COUNT(*) FROM sets s WHERE s.workout_exercise_id = we.id AND s.set_type != 'warmup') AS n
-     FROM workout_exercises we WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
+  >(WORKOUT_COPY_EXERCISES_SQL, workoutId);
   await db.withTransactionAsync(async () => {
     await db.runAsync('INSERT INTO routines (id, name) VALUES (?, ?)', routineId, name.trim());
     for (const ex of exercises) {
@@ -476,6 +474,48 @@ export async function startWorkoutFromRoutine(
     if (ex.superset_with_next) await setSupersetWithNext(db, weId, true);
   }
   return workoutId;
+}
+
+/**
+ * Quick start: begin a new workout pre-filled from a past workout — same exercises
+ * in order, target sets = that session's non-warmup set count per exercise, superset
+ * chain preserved. Same shape as startWorkoutFromRoutine, sourced from a workout.
+ */
+export async function startWorkoutFromPast(db: SQLiteDatabase, srcWorkoutId: string): Promise<string> {
+  const src = await getWorkout(db, srcWorkoutId);
+  const workoutId = await startWorkout(db, src?.name ?? undefined);
+  const exercises = await db.getAllAsync<
+    { exercise_id: string; position: number; n: number; superset_with_next: number }
+  >(WORKOUT_COPY_EXERCISES_SQL, srcWorkoutId);
+  for (const ex of exercises) {
+    const weId = await addExerciseToWorkout(db, workoutId, ex.exercise_id, Math.max(1, ex.n));
+    if (ex.superset_with_next) await setSupersetWithNext(db, weId, true);
+  }
+  return workoutId;
+}
+
+/** Quick start from a plain list of exercise ids, in order (templates). */
+export async function startWorkoutFromExercises(
+  db: SQLiteDatabase, exerciseIds: string[], targetSets = 3,
+): Promise<string> {
+  const workoutId = await startWorkout(db);
+  for (const id of exerciseIds) await addExerciseToWorkout(db, workoutId, id, targetSets);
+  return workoutId;
+}
+
+/**
+ * Resolve exercise names → ids, preserving input order and skipping any that don't
+ * exist. SQL `IN (...)` returns rows in arbitrary order, so we reorder in JS —
+ * templates reference seeded exercises by name and need their listed order kept.
+ */
+export async function resolveExerciseIdsByName(
+  db: SQLiteDatabase, names: string[],
+): Promise<string[]> {
+  if (!names.length) return [];
+  const rows = await db.getAllAsync<{ id: string; name: string }>(
+    `SELECT id, name FROM exercises WHERE name IN (${names.map(() => '?').join(',')})`, ...names);
+  const byName = new Map(rows.map((r) => [r.name, r.id]));
+  return names.map((n) => byName.get(n)).filter((id): id is string => id != null);
 }
 
 // ---------- body: weight ----------

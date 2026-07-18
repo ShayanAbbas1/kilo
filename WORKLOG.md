@@ -2,6 +2,38 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-18 — Cold-start Workout tab (same PR)
+
+Owner has no routines → empty home screen felt dead. Strong-style fix, opus subagent build: with no routines the tab lists the last 3 finished workouts ("Start from a recent workout" — `startWorkoutFromPast` copies exercises in position order, target sets = non-warmup count, supersets preserved, via extracted `WORKOUT_COPY_EXERCISES_SQL` now shared with `createRoutineFromWorkout`); with no history either, three template cards (Upper/Lower/Full Body) whose exercise names are verbatim seed names (verified against `src/data/exercises.json` — there is no plain "Bench Press"/"Deadlift" in free-exercise-db; it's "Barbell Bench Press - Medium Grip" etc.), resolved to ids at tap time via `resolveExerciseIdsByName` (SQL `IN` doesn't preserve order — JS reorders, unresolved skipped) → `startWorkoutFromExercises(ids, 3)`. All start paths share the active-workout guard. New test-db assertions cover copy-from-past ordering/target-sets/superset + name resolution.
+
+## 2026-07-18 — Space Grotesk (same PR)
+
+Owner disliked the system font; wanted Dank Mono — declined (commercial license, public repo = redistribution) and offered free options; owner picked Space Grotesk. Implementation notes:
+- `npx expo install expo-font @expo-google-fonts/space-grotesk` auto-added the `expo-font` config plugin to app.json — REVERTED that (plugin = native change = APK rebuild); runtime `useFonts` in `_layout.tsx` works in Expo Go + OTA without it. Root layout returns null until fonts load.
+- Android ignores numeric `fontWeight` on custom font families, so `src/components/text.tsx` exports a `Text` wrapper that flattens the style and maps fontWeight → `SpaceGrotesk_<weight>` file (800/900 clamp to 700, the heaviest cut), clearing fontWeight to avoid faux-bold stacking. All 18 Text-using files import it; screens still write plain `fontWeight:`.
+- TextInputs can't use the wrapper — each got an explicit `fontFamily` (weight-mapped where they had fontWeight, which was then removed).
+- Nav `headerTitleStyle`/`tabBarLabelStyle` take fontFamily directly.
+- Space Grotesk has no italic — the two italic note styles will render non-italic on Android; acceptable.
+- Checks: tsc, lint, 9 suites. Owner verifies on device.
+
+## 2026-07-18 — Premium pass (same PR as Ember theme)
+
+Owner: ember theme "fine but not premium"; stock black bg lacks personality; read-only vs active workout screens too similar (old problem). Orchestrated: tokens inline, then 4 parallel subagents (history-detail redesign, active-workout live strip, charts, mechanical input-border sweep) + a read-only premium audit; audit's top findings fixed inline.
+
+- **Backgrounds**: dark = layered espresso (`#161210` page → `#221C17` card → `#332A22` selected), light = warm paper `#FAF6F1` with white cards. New `border` token; Card = radius 16 + hairline border; all 14 TextInputs got hairline borders (field radius normalized to 10; the compact in-row set inputs stay 8 deliberately).
+- **Read-only vs active** (the named problem): history detail is now a report — Duration/Sets/Volume stat card (22/800 tabular numbers over Type.label captions, hairline column dividers), tighter muted set table. Active workout has an always-visible status strip under the header — ember wash (`tint+'14'`), `● In progress` + `{elapsed}m · {n} sets`; the rest countdown/+15s/Skip takes over the same strip while resting (was a conditional bar). Elapsed left the header title.
+- **Charts**: gradient area fill under LineChart primary (tint 18%→0, safe — Point[] has no null gaps), ColumnChart bars round only top corners, TrendChart primary stroke 2.5 vs 1.75 others.
+- **Audit fixes**: secondary Button had same fill as Card = invisible on cards → hairline border (transparent on primary to keep geometry); report muscle-gap row could wrap on long names → flex+numberOfLines; weight ± stepper had no pressed state; Delete header action weight-matched to Finish; exercise title 17 on both workout screens.
+- Deferred from audit (diminishing returns): unify hand-rolled pills onto Chip, caption sizes 11/12/13 → Type.caption sweep, list-row divider standardization, Type.title adoption sweep.
+- Checks: tsc, lint (1 pre-existing warning), 9 test suites. Not eyeballed on device.
+
+Owner asked for a colors/typography pass; picked ember orange + polished system fonts (over violet/green/Inter) via option prompt. All in `theme.ts` since every screen already reads `useTheme()`:
+
+- **Palette**: warm stone neutrals (light `#F5F1EC` cards / warm near-black text; dark keeps pure-black OLED bg with warm-shifted `#1E1A17` cards), tint `#EA580C` light / `#FF8A3C` dark. New `onTint` token — dark text on the bright dark-mode orange beats white for contrast; replaced 9 hardcoded `'#fff'`-on-tint spots (chips, buttons, calendar selected day) across 6 files. `accent` moved orange→cyan because the Trendline's kcal line would have collided with the now-orange weight line.
+- **Nav chrome**: `_layout.tsx` builds react-navigation themes from the palette (headers/tab bar were stock); bold header titles + tab labels. `headerTitleStyle` only accepts fontFamily/Size/Weight — no letterSpacing.
+- **Type scale**: `Type` in theme.ts (stat/title/body/caption/label, `satisfies Record<string, TextStyle>`); SectionTitle uses `Type.label`, TDEE number uses `Type.stat` (24→30 w/ tight tracking), buttons bumped to 700. Deliberately did NOT sweep all ~100 inline fontSizes — sizes were already consistent (13/16/17); Type is there for new code.
+- Verified: tsc, lint, 9 test suites. NOT eyeballed on device — owner should check dark + light before merging.
+
 ## 2026-07-18 — Session: all-time + custom date ranges
 
 Owner asked for an "All time" chip on the date-range filter, user-creatable custom ranges, and confirmation that existing ranges are rolling `now − N days` windows.

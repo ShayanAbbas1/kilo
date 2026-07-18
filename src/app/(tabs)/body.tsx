@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   CalorieDay, CalorieEntry, WeightRow,
@@ -101,7 +102,7 @@ export default function BodyTab() {
         </SectionTitle>
         <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
           <TextInput
-            style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1 }]}
             value={weightText}
             onChangeText={setWeightText}
             keyboardType="decimal-pad"
@@ -118,14 +119,14 @@ export default function BodyTab() {
         <Card style={{ gap: Spacing.two }}>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <TextInput
-              style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1.4 }]}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1.4 }]}
               value={labelText}
               onChangeText={setLabelText}
               placeholder="Meal (optional)"
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
-              style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1 }]}
               value={kcalText}
               onChangeText={setKcalText}
               keyboardType="number-pad"
@@ -133,7 +134,7 @@ export default function BodyTab() {
               placeholderTextColor={colors.textSecondary}
             />
             <TextInput
-              style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 0.9 }]}
+              style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 0.9 }]}
               value={proteinText}
               onChangeText={setProteinText}
               keyboardType="decimal-pad"
@@ -174,7 +175,7 @@ export default function BodyTab() {
         <Card style={{ gap: 2 }}>
           {tdee.ok ? (
             <>
-              <Text style={{ color: colors.text, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ color: colors.text, ...Type.stat }}>
                 ≈ {Math.round(tdee.tdee).toLocaleString()} kcal/day
               </Text>
               <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
@@ -241,7 +242,8 @@ export default function BodyTab() {
 
 const styles = StyleSheet.create({
   input: {
-    borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
   },
   entryRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

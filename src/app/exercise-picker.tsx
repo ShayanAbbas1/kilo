@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  FlatList, Pressable, ScrollView, StyleSheet, TextInput, View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -78,7 +79,7 @@ export default function ExercisePicker() {
     <View style={{ flex: 1 }}>
       <TextInput
         style={[styles.search, {
-          color: colors.text, backgroundColor: colors.backgroundElement,
+          color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border,
         }]}
         placeholder="Search exercises…"
         placeholderTextColor={colors.textSecondary}
@@ -190,7 +191,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
         backgroundColor: selected ? colors.tint : colors.backgroundElement,
         opacity: pressed ? 0.7 : 1,
       })}>
-      <Text style={{ color: selected ? '#fff' : colors.text, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: selected ? colors.onTint : colors.text, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
   search: {
     margin: Spacing.three, marginBottom: Spacing.two,
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 16,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
   },
   row: {
     paddingVertical: 12, paddingHorizontal: Spacing.three,

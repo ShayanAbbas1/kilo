@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -135,7 +136,7 @@ export default function ReportScreen() {
         )}
         {data.gaps.map((g) => (
           <View key={g.muscle} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-            <Text style={{ color: colors.text, fontSize: 15 }}>{g.muscle}</Text>
+            <Text style={{ color: colors.text, fontSize: 15, flex: 1 }} numberOfLines={1}>{g.muscle}</Text>
             <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>
               {g.reason === 'stale' ? `${g.daysSince}d since last trained` : 'no sets this week'}
             </Text>

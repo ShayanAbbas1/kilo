@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -133,7 +134,7 @@ export default function HistoryTab() {
                           isSelected && { backgroundColor: colors.tint },
                           !isSelected && isToday && { borderWidth: 1, borderColor: colors.tint },
                         ]}>
-                        <Text style={{ color: isSelected ? '#fff' : colors.text, fontSize: 13 }}>
+                        <Text style={{ color: isSelected ? colors.onTint : colors.text, fontSize: 13 }}>
                           {Number(day.slice(-2))}
                         </Text>
                       </View>
@@ -173,7 +174,10 @@ export default function HistoryTab() {
           onLongPress={() => onDelete(item)}
           style={({ pressed }) => [
             styles.card,
-            { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },
+            {
+              backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement,
+              borderColor: colors.border,
+            },
           ]}>
           <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
             {item.name ?? formatDateTime(item.started_at)}
@@ -189,7 +193,7 @@ export default function HistoryTab() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 12, padding: Spacing.three, gap: 4 },
+  card: { borderRadius: 16, padding: Spacing.three, gap: 4, borderWidth: StyleSheet.hairlineWidth },
   monthRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   weekRow: { flexDirection: 'row' },
   dowLabel: { flex: 1, textAlign: 'center', fontSize: 12 },

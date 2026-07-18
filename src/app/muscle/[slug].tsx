@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { BarList, ColumnChart } from '@/components/charts';
 import { Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -74,7 +75,7 @@ export default function MuscleDetail() {
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
+              <Text style={{ color: metric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {m === 'sets' ? 'Sets' : 'Tonnage'}
               </Text>
             </Pressable>
@@ -104,7 +105,7 @@ export default function MuscleDetail() {
                     opacity: pressed ? 0.7 : 1,
                   })}>
                   <Text style={{
-                    color: activeHead?.head === h.head ? '#fff' : colors.text,
+                    color: activeHead?.head === h.head ? colors.onTint : colors.text,
                     fontWeight: '600', fontSize: 12,
                   }}>
                     {h.head}

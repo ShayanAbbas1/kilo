@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   Workout, WorkoutExerciseDetail, createRoutineFromWorkout, deleteWorkout,
@@ -43,6 +44,16 @@ export default function WorkoutDetail() {
     ]);
   };
 
+  const totalSets = exercises.reduce((n, ex) => n + ex.sets.length, 0);
+  const volumeKg = exercises.reduce(
+    (sum, ex) => sum + ex.sets.reduce(
+      (s, set) => s + (set.weight_kg != null && set.reps != null ? set.weight_kg * set.reps : 0), 0), 0);
+  const summary = workout && [
+    { label: 'Duration', value: workout.finished_at ? durationLabel(workout.started_at, workout.finished_at) : '—' },
+    { label: 'Sets', value: String(totalSets) },
+    { label: 'Volume', value: weightLabel(volumeKg, unit) },
+  ];
+
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six }}>
       <Stack.Screen
@@ -50,7 +61,7 @@ export default function WorkoutDetail() {
           title: workout?.name ?? 'Workout',
           headerRight: () => (
             <Pressable onPress={onDelete} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ color: colors.danger, fontSize: 17 }}>Delete</Text>
+              <Text style={{ color: colors.danger, fontSize: 17, fontWeight: '600' }}>Delete</Text>
             </Pressable>
           ),
         }}
@@ -61,6 +72,21 @@ export default function WorkoutDetail() {
           {workout.finished_at ? ` · ${durationLabel(workout.started_at, workout.finished_at)}` : ''}
         </Text>
       )}
+      {summary ? (
+        <Card style={{ flexDirection: 'row' }}>
+          {summary.map((st, i) => (
+            <View
+              key={st.label}
+              style={{
+                flex: 1, alignItems: 'center', gap: Spacing.one,
+                ...(i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border }),
+              }}>
+              <Text style={[styles.statNum, { color: colors.text }]}>{st.value}</Text>
+              <Text style={[Type.label, { color: colors.textSecondary }]}>{st.label}</Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
       {workout?.notes ? (
         <Card>
           <Text style={{ color: colors.text, fontSize: 14, fontStyle: 'italic' }}>
@@ -95,8 +121,10 @@ export default function WorkoutDetail() {
         <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
           <TextInput
             style={{
-              flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+              flex: 1, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
               color: colors.text, backgroundColor: colors.background,
+              borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
+              fontFamily: 'SpaceGrotesk_400Regular',
             }}
             value={routineName}
             onChangeText={setRoutineName}
@@ -126,21 +154,23 @@ export default function WorkoutDetail() {
           <Pressable
             onPress={() => router.push(`/exercise/${ex.exercise_id}`)}
             style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-            <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>
+            <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>
               {ex.name} <Text style={{ fontSize: 12 }}>📈</Text>
             </Text>
           </Pressable>
-          {ex.sets.map((s, idx) => (
-            <View key={s.id} style={{ flexDirection: 'row', gap: Spacing.three }}>
-              <Text style={{ color: colors.textSecondary, width: 24, fontWeight: '600' }}>
-                {s.set_type === 'warmup' ? 'W' : s.set_type === 'failure' ? 'F' : idx + 1}
-              </Text>
-              <Text style={{ color: colors.text, fontVariant: ['tabular-nums'] }}>
-                {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'} × {s.reps ?? '—'}
-                {s.rpe != null ? ` @ ${s.rpe}` : ''}
-              </Text>
-            </View>
-          ))}
+          <View style={{ gap: 2, marginTop: 2 }}>
+            {ex.sets.map((s, idx) => (
+              <View key={s.id} style={{ flexDirection: 'row', gap: Spacing.three, paddingVertical: 1 }}>
+                <Text style={{ color: colors.textSecondary, width: 20, fontWeight: '600', fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                  {s.set_type === 'warmup' ? 'W' : s.set_type === 'failure' ? 'F' : idx + 1}
+                </Text>
+                <Text style={{ color: colors.text, fontVariant: ['tabular-nums'] }}>
+                  {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'} × {s.reps ?? '—'}
+                  {s.rpe != null ? ` @ ${s.rpe}` : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
           {ex.notes ? (
             <Text style={{ color: colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
               {ex.notes}
@@ -151,3 +181,7 @@ export default function WorkoutDetail() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  statNum: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+});

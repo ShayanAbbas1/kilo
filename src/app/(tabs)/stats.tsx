@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { BarList, ColumnChart, LineChart, Point, TrendChart } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
 import { Card, EmptyState, SectionTitle } from '@/components/ui';
@@ -201,7 +202,7 @@ export default function StatsTab() {
                 backgroundColor: range === r ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: range === r ? '#fff' : colors.text, fontWeight: '600', fontSize: 13 }}>
+              <Text style={{ color: range === r ? colors.onTint : colors.text, fontWeight: '600', fontSize: 13 }}>
                 {r === 'all' ? 'All' : `${r}d`}
               </Text>
             </Pressable>
@@ -220,7 +221,9 @@ export default function StatsTab() {
             <TextInput
               style={{
                 flex: 1, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8,
-                color: colors.text, backgroundColor: colors.background, fontSize: 13,
+                borderWidth: StyleSheet.hairlineWidth,
+                color: colors.text, backgroundColor: colors.background, borderColor: colors.border, fontSize: 13,
+                fontFamily: 'SpaceGrotesk_400Regular',
               }}
               value={newDays}
               onChangeText={setNewDays}
@@ -236,7 +239,7 @@ export default function StatsTab() {
                 paddingVertical: 6, paddingHorizontal: 14, borderRadius: 8,
                 backgroundColor: colors.tint, opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
+              <Text style={{ color: colors.onTint, fontWeight: '600', fontSize: 13 }}>Add</Text>
             </Pressable>
           </View>
         )}
@@ -254,7 +257,7 @@ export default function StatsTab() {
                 opacity: pressed ? 0.7 : 1,
               })}>
               <Text style={{
-                color: muscleMetric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12,
+                color: muscleMetric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12,
               }}>
                 {m === 'sets' ? 'Sets' : 'Tonnage'}
               </Text>
