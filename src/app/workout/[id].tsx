@@ -408,14 +408,15 @@ export default function ActiveWorkoutScreen() {
             {ex.sets.map((s, idx) => {
               const ghost = ex.prev[idx];
               return (
-                  <View
+                  <Pressable
                     key={s.id}
+                    onLongPress={() => onDeleteSet(s)}
                     style={[
                       styles.setRow,
                       s.completed && { backgroundColor: colors.successBg, borderRadius: 8 },
                     ]}>
-                    {/* long-press to delete lives on the set label only — inside the
-                        weight/reps inputs it would clash with text selection */}
+                    {/* long-press anywhere on the row deletes the set — except inside the
+                        weight/reps inputs, where long-press is text selection */}
                     <Pressable
                       style={({ pressed }) => [styles.colSet, { opacity: pressed ? 0.5 : 1 }]}
                       onPress={() => onCycleType(ex, s)}
@@ -470,6 +471,7 @@ export default function ActiveWorkoutScreen() {
                     <Pressable
                       style={({ pressed }) => [styles.colCheck, { opacity: pressed ? 0.5 : 1 }]}
                       onPress={() => onToggleComplete(ex, s, idx)}
+                      onLongPress={() => onDeleteSet(s)}
                       hitSlop={8}>
                       <Text style={{
                         fontSize: 18, textAlign: 'center',
@@ -478,7 +480,7 @@ export default function ActiveWorkoutScreen() {
                         {s.completed ? (s.pr ? '🏆' : '✔') : '○'}
                       </Text>
                     </Pressable>
-                  </View>
+                  </Pressable>
               );
             })}
             <Button
