@@ -173,7 +173,10 @@ export default function HistoryTab() {
           onLongPress={() => onDelete(item)}
           style={({ pressed }) => [
             styles.card,
-            { backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement },
+            {
+              backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement,
+              borderColor: colors.border,
+            },
           ]}>
           <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>
             {item.name ?? formatDateTime(item.started_at)}
@@ -189,7 +192,7 @@ export default function HistoryTab() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 12, padding: Spacing.three, gap: 4 },
+  card: { borderRadius: 16, padding: Spacing.three, gap: 4, borderWidth: StyleSheet.hairlineWidth },
   monthRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   weekRow: { flexDirection: 'row' },
   dowLabel: { flex: 1, textAlign: 'center', fontSize: 12 },

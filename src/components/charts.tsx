@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LayoutChangeEvent, Text, View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -41,6 +41,9 @@ export function LineChart({
     vals.map((v, i) => `${i === 0 ? 'M' : 'L'} ${px(i).toFixed(1)} ${py(v).toFixed(1)}`).join(' ');
 
   const last = data[data.length - 1];
+  const primaryPath = path(data.map((d) => d.value));
+  // ponytail: primary series is always gap-free (Point[] has no nulls), so the area fill is unconditional here.
+  const areaPath = `${primaryPath} L ${px(data.length - 1).toFixed(1)} ${height} L ${px(0).toFixed(1)} ${height} Z`;
 
   return (
     <View>
@@ -55,16 +58,23 @@ export function LineChart({
       <View onLayout={onLayout} style={{ height }}>
         {width > 0 && (
           <Svg width={width} height={height}>
+            <Defs>
+              <LinearGradient id="lineChartAreaFill" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={colors.tint} stopOpacity={0.18} />
+                <Stop offset="1" stopColor={colors.tint} stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
             {target != null && (
               <Line
                 x1={0} x2={width} y1={py(target)} y2={py(target)}
                 stroke={colors.textSecondary} strokeWidth={1} strokeDasharray="4 4"
               />
             )}
+            <Path d={areaPath} fill="url(#lineChartAreaFill)" stroke="none" />
             {secondary && secondary.length === data.length && (
               <Path d={path(secondary)} stroke={colors.textSecondary} strokeWidth={1.5} fill="none" />
             )}
-            <Path d={path(data.map((d) => d.value))} stroke={colors.tint} strokeWidth={2.5} fill="none" />
+            <Path d={primaryPath} stroke={colors.tint} strokeWidth={2.5} fill="none" />
             <Circle cx={px(data.length - 1)} cy={py(last.value)} r={4} fill={colors.tint} />
           </Svg>
         )}
@@ -148,7 +158,8 @@ export function ColumnChart({
             style={{
               flex: 1,
               height: Math.max(2, (d.value / max) * height),
-              borderRadius: 3,
+              borderTopLeftRadius: 3,
+              borderTopRightRadius: 3,
               backgroundColor:
                 target != null && d.value > target ? colors.danger : colors.tint,
               opacity: d.value === 0 ? 0.25 : 1,
@@ -234,8 +245,11 @@ export function TrendChart({
       <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height }}>
         {width > 0 && (
           <Svg width={width} height={height}>
-            {series.map((s) => (
-              <Path key={s.label} d={pathFor(s.values)} stroke={s.color} strokeWidth={2} fill="none" />
+            {series.map((s, i) => (
+              <Path
+                key={s.label} d={pathFor(s.values)} stroke={s.color}
+                strokeWidth={i === 0 ? 2.5 : 1.75} fill="none"
+              />
             ))}
           </Svg>
         )}

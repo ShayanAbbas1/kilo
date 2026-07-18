@@ -78,7 +78,7 @@ export default function ExercisePicker() {
     <View style={{ flex: 1 }}>
       <TextInput
         style={[styles.search, {
-          color: colors.text, backgroundColor: colors.backgroundElement,
+          color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border,
         }]}
         placeholder="Search exercises…"
         placeholderTextColor={colors.textSecondary}
@@ -199,6 +199,7 @@ const styles = StyleSheet.create({
   search: {
     margin: Spacing.three, marginBottom: Spacing.two,
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 16,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   row: {
     paddingVertical: 12, paddingHorizontal: Spacing.three,

@@ -24,7 +24,12 @@ export function Button({
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
+        {
+          backgroundColor: bg,
+          opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+          // hairline keeps secondary buttons visible on same-fill cards
+          borderColor: kind === 'primary' ? 'transparent' : colors.border,
+        },
         style,
       ]}>
       <Text style={{ color: fg, fontWeight: '700', fontSize: 16, letterSpacing: 0.2 }}>{title}</Text>
@@ -35,7 +40,12 @@ export function Button({
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const colors = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.backgroundElement }, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+        style,
+      ]}>
       {children}
     </View>
   );
@@ -62,12 +72,14 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
     paddingHorizontal: Spacing.three,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: Spacing.three,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
     ...Type.label,

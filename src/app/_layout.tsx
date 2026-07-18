@@ -16,7 +16,7 @@ const navTheme = (base: typeof DefaultTheme, c: typeof Colors.light | typeof Col
     background: c.background,
     card: c.background,
     text: c.text,
-    border: c.backgroundSelected,
+    border: c.border,
     notification: c.danger,
   },
 });

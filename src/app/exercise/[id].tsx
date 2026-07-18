@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -119,7 +119,8 @@ export default function ExerciseDetail() {
             <TextInput
               style={{
                 flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
-                color: colors.text, backgroundColor: colors.backgroundElement,
+                borderWidth: StyleSheet.hairlineWidth,
+                color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border,
               }}
               value={goalInput}
               onChangeText={setGoalInput}

@@ -5,15 +5,17 @@
 
 import { Platform, TextStyle } from 'react-native';
 
-// Ember palette: warm stone neutrals + ember-orange brand tint. Dark mode stays
-// pure-black (OLED, gym-friendly); cards/text are warm-shifted to match the tint.
+// Ember palette: warm-tinted surfaces + ember-orange brand tint. Backgrounds are
+// deliberately NOT pure black/white — dark is layered espresso (page → card →
+// selected, each a step lighter), light is warm paper with white cards.
 export const Colors = {
   light: {
-    text: '#1C1917',
-    background: '#FFFFFF',
-    backgroundElement: '#F5F1EC',
-    backgroundSelected: '#E9E2D9',
+    text: '#221D18',
+    background: '#FAF6F1', // warm paper page
+    backgroundElement: '#FFFFFF', // cards float on the paper
+    backgroundSelected: '#F2EAE0',
     textSecondary: '#6E6862',
+    border: '#EAE1D6', // hairline card/input edges
     tint: '#EA580C',
     onTint: '#FFFFFF', // text on a tint-colored surface
     success: '#2E9E4F',
@@ -23,10 +25,11 @@ export const Colors = {
   },
   dark: {
     text: '#F5F1EC',
-    background: '#000000',
-    backgroundElement: '#1E1A17',
-    backgroundSelected: '#2E2721',
-    textSecondary: '#A8A29E',
+    background: '#161210', // deep espresso, not stock black
+    backgroundElement: '#221C17',
+    backgroundSelected: '#332A22',
+    textSecondary: '#A69E96',
+    border: '#352C24',
     tint: '#FF8A3C',
     onTint: '#221204', // dark text on the bright ember button — higher contrast than white
     success: '#30D158',

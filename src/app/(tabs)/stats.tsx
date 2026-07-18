@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -220,7 +220,8 @@ export default function StatsTab() {
             <TextInput
               style={{
                 flex: 1, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8,
-                color: colors.text, backgroundColor: colors.background, fontSize: 13,
+                borderWidth: StyleSheet.hairlineWidth,
+                color: colors.text, backgroundColor: colors.background, borderColor: colors.border, fontSize: 13,
               }}
               value={newDays}
               onChangeText={setNewDays}

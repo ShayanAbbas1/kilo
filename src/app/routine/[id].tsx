@@ -55,7 +55,7 @@ export default function RoutineEditorScreen() {
     <ScrollView contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.six }}>
       <Stack.Screen options={{ title: name || 'Routine' }} />
       <TextInput
-        style={[styles.nameInput, { color: colors.text, backgroundColor: colors.backgroundElement }]}
+        style={[styles.nameInput, { color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
         value={name}
         onChangeText={onNameChange}
         placeholder="Routine name"
@@ -131,7 +131,7 @@ export default function RoutineEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  nameInput: { borderRadius: 10, padding: Spacing.three, fontSize: 17, fontWeight: '600' },
+  nameInput: { borderRadius: 10, padding: Spacing.three, fontSize: 17, fontWeight: '600', borderWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   setsCount: { minWidth: 24, textAlign: 'center', fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },

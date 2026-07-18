@@ -315,13 +315,15 @@ export default function ActiveWorkoutScreen() {
     return String(n);
   };
 
+  const completedCount = exercises.flatMap((e) => e.sets).filter((s) => s.completed).length;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen
         options={{
-          title: elapsedMin != null && elapsedMin > 0 ? `Workout · ${elapsedMin}m` : 'Workout',
+          title: 'Workout',
           headerRight: () => (
             <Pressable onPress={onFinish} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: colors.tint, fontSize: 17, fontWeight: '600' }}>Finish</Text>
@@ -329,33 +331,42 @@ export default function ActiveWorkoutScreen() {
           ),
         }}
       />
-      {restLeft != null && (
-        <View style={[styles.restBar, { backgroundColor: colors.backgroundElement }]}>
-          <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
-            Rest {fmtCountdown(restLeft)}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <Pressable
-              onPress={() => {
-                const end = (restEndsAt.current ?? Date.now()) + 15000;
-                restEndsAt.current = end;
-                const left = Math.ceil((end - Date.now()) / 1000);
-                setRestLeft(left);
-                rearmRestNotif(left);
-              }}
-              hitSlop={8}
-              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => { stopRest(); clearRestNotif(); }}
-              hitSlop={8}
-              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      <View style={[styles.statusStrip, { backgroundColor: colors.tint + '14', borderBottomColor: colors.border }]}>
+        {restLeft != null ? (
+          <>
+            <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              Rest {fmtCountdown(restLeft)}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+              <Pressable
+                onPress={() => {
+                  const end = (restEndsAt.current ?? Date.now()) + 15000;
+                  restEndsAt.current = end;
+                  const left = Math.ceil((end - Date.now()) / 1000);
+                  setRestLeft(left);
+                  rearmRestNotif(left);
+                }}
+                hitSlop={8}
+                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: colors.tint, fontWeight: '600' }}>+15s</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => { stopRest(); clearRestNotif(); }}
+                hitSlop={8}
+                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Skip</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={{ color: colors.tint, fontWeight: '700' }}>● In progress</Text>
+            <Text style={{ color: colors.textSecondary, fontVariant: ['tabular-nums'] }}>
+              {elapsedMin ?? 0}m · {completedCount} sets
+            </Text>
+          </>
+        )}
+      </View>
       <ScrollView
         contentContainerStyle={{ padding: Spacing.three, gap: Spacing.three }}
         keyboardShouldPersistTaps="handled">
@@ -438,7 +449,7 @@ export default function ActiveWorkoutScreen() {
                         : '—'}
                     </Text>
                     <TextInput
-                      style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                      style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
                       value={s.weightText}
                       onChangeText={(t) => onWeightChange(ex.weId, s.id, t)}
                       onFocus={() => setWeightFocus({ weId: ex.weId, setId: s.id })}
@@ -449,7 +460,7 @@ export default function ActiveWorkoutScreen() {
                       selectTextOnFocus
                     />
                     <TextInput
-                      style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                      style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
                       value={s.repsText}
                       onChangeText={(t) => onRepsChange(ex.weId, s.id, t)}
                       keyboardType="number-pad"
@@ -459,7 +470,7 @@ export default function ActiveWorkoutScreen() {
                     />
                     {showRpe && (
                       <TextInput
-                        style={[styles.colRpe, styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                        style={[styles.colRpe, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
                         value={s.rpeText}
                         onChangeText={(t) => onRpeChange(ex.weId, s.id, t)}
                         keyboardType="decimal-pad"
@@ -492,6 +503,7 @@ export default function ActiveWorkoutScreen() {
             <TextInput
               style={{
                 borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, fontSize: 13, minHeight: 32,
+                borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
                 color: colors.textSecondary, backgroundColor: colors.background,
               }}
               value={ex.notes}
@@ -511,6 +523,7 @@ export default function ActiveWorkoutScreen() {
         <TextInput
           style={{
             borderRadius: 10, padding: Spacing.three, fontSize: 15, minHeight: 44,
+            borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
             color: colors.text, backgroundColor: colors.backgroundElement,
           }}
           value={notes}
@@ -528,7 +541,10 @@ export default function ActiveWorkoutScreen() {
               key={d}
               onPress={() => bumpWeight(d)}
               hitSlop={8}
-              style={[styles.stepBtn, { backgroundColor: colors.backgroundSelected }]}>
+              style={({ pressed }) => [
+                styles.stepBtn,
+                { backgroundColor: colors.backgroundSelected, opacity: pressed ? 0.7 : 1 },
+              ]}>
               <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '700' }}>
                 {d > 0 ? '+' : '−'}{Math.abs(d)} {unit}
               </Text>
@@ -547,9 +563,10 @@ function fmtCountdown(totalSec: number): string {
 
 const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  restBar: {
+  statusStrip: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: 10, paddingHorizontal: Spacing.three,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   setRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.two,
@@ -568,6 +585,7 @@ const styles = StyleSheet.create({
   colCheck: { width: 32 },
   input: {
     borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     fontSize: 16, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'],
   },
 });

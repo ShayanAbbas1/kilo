@@ -2,7 +2,16 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
-## 2026-07-18 — Ember theme (colors + typography)
+## 2026-07-18 — Premium pass (same PR as Ember theme)
+
+Owner: ember theme "fine but not premium"; stock black bg lacks personality; read-only vs active workout screens too similar (old problem). Orchestrated: tokens inline, then 4 parallel subagents (history-detail redesign, active-workout live strip, charts, mechanical input-border sweep) + a read-only premium audit; audit's top findings fixed inline.
+
+- **Backgrounds**: dark = layered espresso (`#161210` page → `#221C17` card → `#332A22` selected), light = warm paper `#FAF6F1` with white cards. New `border` token; Card = radius 16 + hairline border; all 14 TextInputs got hairline borders (field radius normalized to 10; the compact in-row set inputs stay 8 deliberately).
+- **Read-only vs active** (the named problem): history detail is now a report — Duration/Sets/Volume stat card (22/800 tabular numbers over Type.label captions, hairline column dividers), tighter muted set table. Active workout has an always-visible status strip under the header — ember wash (`tint+'14'`), `● In progress` + `{elapsed}m · {n} sets`; the rest countdown/+15s/Skip takes over the same strip while resting (was a conditional bar). Elapsed left the header title.
+- **Charts**: gradient area fill under LineChart primary (tint 18%→0, safe — Point[] has no null gaps), ColumnChart bars round only top corners, TrendChart primary stroke 2.5 vs 1.75 others.
+- **Audit fixes**: secondary Button had same fill as Card = invisible on cards → hairline border (transparent on primary to keep geometry); report muscle-gap row could wrap on long names → flex+numberOfLines; weight ± stepper had no pressed state; Delete header action weight-matched to Finish; exercise title 17 on both workout screens.
+- Deferred from audit (diminishing returns): unify hand-rolled pills onto Chip, caption sizes 11/12/13 → Type.caption sweep, list-row divider standardization, Type.title adoption sweep.
+- Checks: tsc, lint (1 pre-existing warning), 9 test suites. Not eyeballed on device.
 
 Owner asked for a colors/typography pass; picked ember orange + polished system fonts (over violet/green/Inter) via option prompt. All in `theme.ts` since every screen already reads `useTheme()`:
 

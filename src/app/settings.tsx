@@ -127,7 +127,7 @@ export default function SettingsScreen() {
       <SectionTitle>Daily calorie target</SectionTitle>
       <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
         <TextInput
-          style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+          style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1 }]}
           value={targetText}
           onChangeText={setTargetText}
           keyboardType="number-pad"
@@ -140,7 +140,7 @@ export default function SettingsScreen() {
       <SectionTitle>Body weight goal ({unit})</SectionTitle>
       <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
         <TextInput
-          style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+          style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1 }]}
           value={goalWeightText}
           onChangeText={setGoalWeightText}
           keyboardType="decimal-pad"
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
       <SectionTitle>Rest timer (seconds)</SectionTitle>
       <Card style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
         <TextInput
-          style={[styles.input, { color: colors.text, backgroundColor: colors.background, flex: 1 }]}
+          style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, flex: 1 }]}
           value={restText}
           onChangeText={setRestText}
           keyboardType="number-pad"
@@ -195,5 +195,5 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: { borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16 },
+  input: { borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16, borderWidth: StyleSheet.hairlineWidth },
 });

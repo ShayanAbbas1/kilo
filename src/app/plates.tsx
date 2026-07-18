@@ -31,7 +31,7 @@ export default function PlatesScreen() {
   return (
     <View style={{ flex: 1, padding: Spacing.three, gap: Spacing.three }}>
       <TextInput
-        style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundElement }]}
+        style={[styles.input, { color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
         value={text}
         onChangeText={setText}
         keyboardType="decimal-pad"
@@ -63,5 +63,5 @@ export default function PlatesScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: { borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, fontSize: 18 },
+  input: { borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, fontSize: 18, borderWidth: StyleSheet.hairlineWidth },
 });
