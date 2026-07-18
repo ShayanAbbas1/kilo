@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
@@ -11,26 +11,33 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   CalorieDay, MuscleSetsRow, PrRow, StalledLift, TopExerciseRow, WeeklyTrend, WeightRow,
-  getCalorieDays, getMuscleSets, getPrHistory, getStalledLifts, getTopExercises, getWeeklyTrend,
-  getWeightTrend,
+  getCalorieDays, getMuscleSets, getPrHistory, getSetting, getStalledLifts, getTopExercises,
+  getWeeklyTrend, getWeightTrend, setSetting,
 } from '@/db/queries';
 import { formatDateTime, formatDay } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, toDisplayWeight, weightLabel } from '@/lib/units';
 
-type Range = 'week' | 'month' | 'year';
-const RANGE_DAYS: Record<Range, number> = { week: 7, month: 30, year: 365 };
+type Range = number | 'all'; // rolling window in days, or all-time
+const PRESET_DAYS = [7, 30, 365];
 type MuscleMetric = 'sets' | 'tonnage';
 
 function daysAgoIso(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString();
 }
 
+// '' sorts before every ISO timestamp, so `started_at >= ''` matches all rows = all-time.
+function rangeSince(r: Range): string {
+  return r === 'all' ? '' : daysAgoIso(r);
+}
+
 export default function StatsTab() {
   const db = useSQLiteContext();
   const colors = useTheme();
   const { unit, kcalTarget } = useSettings();
-  const [range, setRange] = useState<Range>('week');
+  const [range, setRange] = useState<Range>(7);
+  const [customRanges, setCustomRanges] = useState<number[]>([]);
+  const [newDays, setNewDays] = useState<string | null>(null); // null = add-input hidden
   const [muscleMetric, setMuscleMetric] = useState<MuscleMetric>('sets');
   const [weights, setWeights] = useState<WeightRow[]>([]);
   const [muscles, setMuscles] = useState<MuscleSetsRow[]>([]);
@@ -40,10 +47,34 @@ export default function StatsTab() {
   const [prs, setPrs] = useState<PrRow[]>([]);
   const [stalled, setStalled] = useState<StalledLift[]>([]);
 
+  useEffect(() => {
+    getSetting(db, 'custom_ranges').then((v) => v && setCustomRanges(JSON.parse(v)));
+  }, [db]);
+
+  const saveCustomRanges = (next: number[]) => {
+    setCustomRanges(next);
+    setSetting(db, 'custom_ranges', JSON.stringify(next));
+  };
+
+  const addCustomRange = () => {
+    const days = parseInt(newDays ?? '', 10);
+    setNewDays(null);
+    if (!Number.isFinite(days) || days <= 0) return;
+    if (!PRESET_DAYS.includes(days) && !customRanges.includes(days)) {
+      saveCustomRanges([...customRanges, days]);
+    }
+    setRange(days);
+  };
+
+  const chips: Range[] = [
+    ...[...new Set([...PRESET_DAYS, ...customRanges])].sort((a, b) => a - b),
+    'all',
+  ];
+
   useFocusEffect(
     useCallback(() => {
       getWeightTrend(db, 90).then(setWeights);
-      getMuscleSets(db, daysAgoIso(RANGE_DAYS[range])).then(setMuscles);
+      getMuscleSets(db, rangeSince(range)).then(setMuscles);
       getCalorieDays(db, 14).then(setCalories);
       getTopExercises(db, 8).then(setTopExercises);
       getWeeklyTrend(db, daysAgoIso(84).slice(0, 10)).then(setTrend);
@@ -152,22 +183,66 @@ export default function StatsTab() {
 
       <SectionTitle>Sets per muscle group</SectionTitle>
       <Card style={{ gap: Spacing.three }}>
-        <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-          {(['week', 'month', 'year'] as Range[]).map((r) => (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+          {chips.map((r) => (
             <Pressable
-              key={r}
+              key={String(r)}
               onPress={() => setRange(r)}
+              onLongPress={
+                typeof r === 'number' && customRanges.includes(r)
+                  ? () => {
+                      saveCustomRanges(customRanges.filter((d) => d !== r));
+                      if (range === r) setRange(7);
+                    }
+                  : undefined
+              }
               style={({ pressed }) => ({
-                flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center',
+                paddingVertical: 6, paddingHorizontal: 14, borderRadius: 8, alignItems: 'center',
                 backgroundColor: range === r ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
               <Text style={{ color: range === r ? '#fff' : colors.text, fontWeight: '600', fontSize: 13 }}>
-                {r === 'week' ? '7d' : r === 'month' ? '30d' : '365d'}
+                {r === 'all' ? 'All' : `${r}d`}
               </Text>
             </Pressable>
           ))}
+          <Pressable
+            onPress={() => setNewDays(newDays == null ? '' : null)}
+            style={({ pressed }) => ({
+              paddingVertical: 6, paddingHorizontal: 14, borderRadius: 8, alignItems: 'center',
+              backgroundColor: colors.backgroundSelected, opacity: pressed ? 0.7 : 1,
+            })}>
+            <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>＋</Text>
+          </Pressable>
         </View>
+        {newDays != null && (
+          <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+            <TextInput
+              style={{
+                flex: 1, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8,
+                color: colors.text, backgroundColor: colors.background, fontSize: 13,
+              }}
+              value={newDays}
+              onChangeText={setNewDays}
+              keyboardType="number-pad"
+              placeholder="days, e.g. 90"
+              placeholderTextColor={colors.textSecondary}
+              autoFocus
+              onSubmitEditing={addCustomRange}
+            />
+            <Pressable
+              onPress={addCustomRange}
+              style={({ pressed }) => ({
+                paddingVertical: 6, paddingHorizontal: 14, borderRadius: 8,
+                backgroundColor: colors.tint, opacity: pressed ? 0.7 : 1,
+              })}>
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
+            </Pressable>
+          </View>
+        )}
+        <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+          ＋ adds a custom window · long-press a custom chip to remove it
+        </Text>
         <View style={{ flexDirection: 'row', gap: Spacing.two, alignSelf: 'flex-start' }}>
           {(['sets', 'tonnage'] as MuscleMetric[]).map((m) => (
             <Pressable

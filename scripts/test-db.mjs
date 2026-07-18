@@ -130,6 +130,10 @@ assert.equal(chest.tonnage, 50 * 10 + 55 * 8 + 60 * 8 + 60 * 7, 'tonnage sums we
 const chestSince25 = db.prepare(MUSCLE_SETS_SQL).all('2026-06-25').find((m) => m.muscle === 'chest');
 assert.equal(chestSince25.sets, 2);
 assert.equal(chestSince25.tonnage, 60 * 8 + 60 * 7);
+// all-time filter: '' sorts before every ISO timestamp, so >= '' matches everything
+const chestAllTime = db.prepare(MUSCLE_SETS_SQL).all('').find((m) => m.muscle === 'chest');
+assert.equal(chestAllTime.sets, chest.sets, "'' cutoff (all-time) matches the widest date cutoff");
+assert.equal(chestAllTime.tonnage, chest.tonnage);
 
 // --- analytics: top exercises ---
 const top = db.prepare(TOP_EXERCISES_SQL).all(5);
