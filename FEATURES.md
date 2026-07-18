@@ -13,7 +13,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Previous-session values shown per set (the "what did I do last time" ghost text)
 - [x] Set types: warm-up / working / failure (tap the set number to cycle)
 - [x] Rest timer — wall-clock in-app countdown after each completed set (survives backgrounding), +15s/skip, duration in settings; high-importance heads-up notification with vibration when rest ends while app is backgrounded/locked, suppressed while app is on screen (build-only — expo-notifications no-ops in Expo Go on Android)
-- [x] Edit/delete sets (long-press a set row to delete); delete past workouts — editing a *finished* workout still open
+- [x] Edit/delete sets (long-press anywhere on the set row to delete — inputs excluded, long-press there is text selection); delete past workouts — editing a *finished* workout still open
 - [x] Routines: save a finished workout as a routine (history detail), start from routine (Workout tab), long-press to delete
 - [x] Workout history list + detail view (long-press a workout in the list to delete; also Delete in detail header)
 
@@ -21,6 +21,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Daily weigh-in: one number, date-stamped, two taps from app open
 - [x] Edit/delete past entries (long-press to delete; re-save today's to edit)
 - [x] 7-day moving average shown alongside raw entries (daily noise demoralizes; the trend is the truth)
+- [x] Save feedback: toast confirms every weigh-in/calorie/settings save (and rejects invalid input with a message instead of doing nothing) — `src/lib/toast.ts`
 
 ### Calories
 - [x] Log per-meal entries (label + kcal) or a single daily total — user's choice per day (protein column in DB, no UI yet)

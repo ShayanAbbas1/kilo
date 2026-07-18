@@ -11,6 +11,10 @@ Owner asked for an "All time" chip on the date-range filter, user-creatable cust
 - **Custom ranges**: ＋ chip opens an inline day-count input; new Nd chips merge sorted into the preset row, long-press removes. Persisted as a JSON number array in the existing `settings` KV table under `custom_ranges` (read directly in stats.tsx — not worth a settings-context field for one screen). Selected range itself still resets to 7d on restart, deliberately.
 - Checks: tsc, lint, npm test green.
 
+## 2026-07-18 — Save feedback (toasts)
+
+Owner report: saving a weigh-in or calorie entry gave zero feedback — no toast, nothing visible without scrolling. Added `src/lib/toast.ts` (`toast()`: ToastAndroid on Android, Alert fallback on iOS — ponytail-commented, upgrade to a custom toast when iOS becomes a test target). Wired into every previously-silent save: Body tab weigh-in ("Weigh-in saved — 82.5 kg") and calorie add ("Added 650 kcal"), Settings rest timer / calorie target / weight goal (set + cleared variants). Invalid input now toasts a hint ("Enter a valid weight") instead of silently returning — that silent-return was half the confusion. Saves also `Keyboard.dismiss()` so the confirmation isn't hidden behind the keyboard. Workout logging, routines, deletes, imports untouched — they already had visible feedback (rows update in place / Alert confirms).
+
 ## 2026-07-04 — Session 3: orchestrated wave (calendar, picker, heads, routines, polish)
 
 PM/architect/implementer pipeline: a Fable architect wrote per-feature specs (scratchpad), sonnet implementers built each in isolated git worktrees off main while another session shipped RPE/notification/supersets in parallel; orchestrator merged, resolved conflicts, verified, pushed.
