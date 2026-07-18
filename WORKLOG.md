@@ -2,6 +2,15 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-18 — Session: all-time + custom date ranges
+
+Owner asked for an "All time" chip on the date-range filter, user-creatable custom ranges, and confirmation that existing ranges are rolling `now − N days` windows.
+
+- **Confirmed**: the only range filter is Stats' muscle-group card (drives heatmap + bar list). All three chips are rolling windows via `daysAgoIso()` (`Date.now() − N*86400000`), not calendar-aligned — 7d/30d/365d as intended. Other screens use fixed windows (90d, 12 weeks, 28d) with no toggle.
+- **All-time chip**: `Range` is now `number | 'all'`; `'all'` passes `''` as the `sinceIso` bind — empty string sorts before every ISO timestamp, so `started_at >= ''` matches everything. No SQL change. Asserted in test-db.mjs.
+- **Custom ranges**: ＋ chip opens an inline day-count input; new Nd chips merge sorted into the preset row, long-press removes. Persisted as a JSON number array in the existing `settings` KV table under `custom_ranges` (read directly in stats.tsx — not worth a settings-context field for one screen). Selected range itself still resets to 7d on restart, deliberately.
+- Checks: tsc, lint, npm test green.
+
 ## 2026-07-18 — Save feedback (toasts)
 
 Owner report: saving a weigh-in or calorie entry gave zero feedback — no toast, nothing visible without scrolling. Added `src/lib/toast.ts` (`toast()`: ToastAndroid on Android, Alert fallback on iOS — ponytail-commented, upgrade to a custom toast when iOS becomes a test target). Wired into every previously-silent save: Body tab weigh-in ("Weigh-in saved — 82.5 kg") and calorie add ("Added 650 kcal"), Settings rest timer / calorie target / weight goal (set + cleared variants). Invalid input now toasts a hint ("Enter a valid weight") instead of silently returning — that silent-return was half the confusion. Saves also `Keyboard.dismiss()` so the confirmation isn't hidden behind the keyboard. Workout logging, routines, deletes, imports untouched — they already had visible feedback (rows update in place / Alert confirms).
