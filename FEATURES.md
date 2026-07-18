@@ -15,7 +15,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Rest timer — wall-clock in-app countdown after each completed set (survives backgrounding), +15s/skip, duration in settings; high-importance heads-up notification with vibration when rest ends while app is backgrounded/locked, suppressed while app is on screen (build-only — expo-notifications no-ops in Expo Go on Android)
 - [x] Edit/delete sets (long-press a set row to delete); delete past workouts — editing a *finished* workout still open
 - [x] Routines: save a finished workout as a routine (history detail), start from routine (Workout tab), long-press to delete
-- [x] Workout history list + detail view
+- [x] Workout history list + detail view (long-press a workout in the list to delete; also Delete in detail header)
 
 ### Body weight
 - [x] Daily weigh-in: one number, date-stamped, two taps from app open
