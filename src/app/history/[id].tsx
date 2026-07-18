@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card } from '@/components/ui';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -123,6 +124,7 @@ export default function WorkoutDetail() {
               flex: 1, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
               color: colors.text, backgroundColor: colors.background,
               borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
+              fontFamily: 'SpaceGrotesk_400Regular',
             }}
             value={routineName}
             onChangeText={setRoutineName}

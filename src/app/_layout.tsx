@@ -1,3 +1,7 @@
+import {
+  SpaceGrotesk_300Light, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold, useFonts,
+} from '@expo-google-fonts/space-grotesk';
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { useColorScheme } from 'react-native';
@@ -23,6 +27,11 @@ const navTheme = (base: typeof DefaultTheme, c: typeof Colors.light | typeof Col
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk_300Light, SpaceGrotesk_400Regular, SpaceGrotesk_500Medium,
+    SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold,
+  });
+  if (!fontsLoaded) return null; // brief blank on cold start beats a font swap flash
   return (
     <ThemeProvider
       value={colorScheme === 'dark'
@@ -30,7 +39,7 @@ export default function RootLayout() {
         : navTheme(DefaultTheme, Colors.light)}>
       <SQLiteProvider databaseName={DB_NAME} onInit={migrate}>
         <SettingsProvider>
-          <Stack screenOptions={{ headerTitleStyle: { fontWeight: '700' } }}>
+          <Stack screenOptions={{ headerTitleStyle: { fontFamily: 'SpaceGrotesk_700Bold' } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="workout/[id]" options={{ title: 'Workout' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />

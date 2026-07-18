@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 // ponytail: legacy FS API — stable string read/write; migrate to the new File class if expo drops legacy
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -7,6 +7,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -195,5 +196,8 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: { borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16, borderWidth: StyleSheet.hairlineWidth },
+  input: {
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
+  },
 });

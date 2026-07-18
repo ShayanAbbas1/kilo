@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card, EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -131,7 +132,10 @@ export default function RoutineEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  nameInput: { borderRadius: 10, padding: Spacing.three, fontSize: 17, fontWeight: '600', borderWidth: StyleSheet.hairlineWidth },
+  nameInput: {
+    borderRadius: 10, padding: Spacing.three, fontSize: 17,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_600SemiBold',
+  },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   setsCount: { minWidth: 24, textAlign: 'center', fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },

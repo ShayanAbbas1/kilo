@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  FlatList, Pressable, ScrollView, StyleSheet, TextInput, View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
   search: {
     margin: Spacing.three, marginBottom: Spacing.two,
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
   },
   row: {
     paddingVertical: 12, paddingHorizontal: Spacing.three,

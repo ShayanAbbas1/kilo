@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
+import { Text } from '@/components/text';
 import { Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -63,5 +64,8 @@ export default function PlatesScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: { borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, fontSize: 18, borderWidth: StyleSheet.hairlineWidth },
+  input: {
+    borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14, fontSize: 18,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
+  },
 });

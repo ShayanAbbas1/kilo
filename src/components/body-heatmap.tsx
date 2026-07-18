@@ -1,6 +1,7 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import Body, { ExtendedBodyPart } from 'react-native-body-highlighter';
 
+import { Text } from '@/components/text';
 import { HEAT_COLORS } from '@/lib/body-map';
 import { useTheme } from '@/hooks/use-theme';
 

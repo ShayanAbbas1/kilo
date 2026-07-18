@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View,
 } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 
+import { Text } from '@/components/text';
 import { Button, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -505,6 +506,7 @@ export default function ActiveWorkoutScreen() {
                 borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, fontSize: 13, minHeight: 32,
                 borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
                 color: colors.textSecondary, backgroundColor: colors.background,
+                fontFamily: 'SpaceGrotesk_400Regular',
               }}
               value={ex.notes}
               onChangeText={(t) => onNotesChange(ex.weId, t)}
@@ -525,6 +527,7 @@ export default function ActiveWorkoutScreen() {
             borderRadius: 10, padding: Spacing.three, fontSize: 15, minHeight: 44,
             borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
             color: colors.text, backgroundColor: colors.backgroundElement,
+            fontFamily: 'SpaceGrotesk_400Regular',
           }}
           value={notes}
           onChangeText={(t) => { setNotes(t); setWorkoutNotes(db, id, t); }}
@@ -586,6 +589,7 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    fontSize: 16, fontWeight: '600', textAlign: 'center', fontVariant: ['tabular-nums'],
+    fontSize: 16, textAlign: 'center', fontVariant: ['tabular-nums'],
+    fontFamily: 'SpaceGrotesk_600SemiBold',
   },
 });

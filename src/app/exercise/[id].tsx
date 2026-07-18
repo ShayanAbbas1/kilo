@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { LineChart, Point } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
 import { Button, Card, SectionTitle } from '@/components/ui';
@@ -121,6 +122,7 @@ export default function ExerciseDetail() {
                 flex: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
                 borderWidth: StyleSheet.hairlineWidth,
                 color: colors.text, backgroundColor: colors.backgroundElement, borderColor: colors.border,
+                fontFamily: 'SpaceGrotesk_400Regular',
               }}
               value={goalInput}
               onChangeText={setGoalInput}

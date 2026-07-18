@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { BarList, ColumnChart, LineChart, Point, TrendChart } from '@/components/charts';
 import { BodyHeatmap } from '@/components/body-heatmap';
 import { Card, EmptyState, SectionTitle } from '@/components/ui';
@@ -222,6 +223,7 @@ export default function StatsTab() {
                 flex: 1, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8,
                 borderWidth: StyleSheet.hairlineWidth,
                 color: colors.text, backgroundColor: colors.background, borderColor: colors.border, fontSize: 13,
+                fontFamily: 'SpaceGrotesk_400Regular',
               }}
               value={newDays}
               onChangeText={setNewDays}

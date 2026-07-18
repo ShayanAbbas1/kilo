@@ -2,6 +2,16 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-18 — Space Grotesk (same PR)
+
+Owner disliked the system font; wanted Dank Mono — declined (commercial license, public repo = redistribution) and offered free options; owner picked Space Grotesk. Implementation notes:
+- `npx expo install expo-font @expo-google-fonts/space-grotesk` auto-added the `expo-font` config plugin to app.json — REVERTED that (plugin = native change = APK rebuild); runtime `useFonts` in `_layout.tsx` works in Expo Go + OTA without it. Root layout returns null until fonts load.
+- Android ignores numeric `fontWeight` on custom font families, so `src/components/text.tsx` exports a `Text` wrapper that flattens the style and maps fontWeight → `SpaceGrotesk_<weight>` file (800/900 clamp to 700, the heaviest cut), clearing fontWeight to avoid faux-bold stacking. All 18 Text-using files import it; screens still write plain `fontWeight:`.
+- TextInputs can't use the wrapper — each got an explicit `fontFamily` (weight-mapped where they had fontWeight, which was then removed).
+- Nav `headerTitleStyle`/`tabBarLabelStyle` take fontFamily directly.
+- Space Grotesk has no italic — the two italic note styles will render non-italic on Android; acceptable.
+- Checks: tsc, lint, 9 suites. Owner verifies on device.
+
 ## 2026-07-18 — Premium pass (same PR as Ember theme)
 
 Owner: ember theme "fine but not premium"; stock black bg lacks personality; read-only vs active workout screens too similar (old problem). Orchestrated: tokens inline, then 4 parallel subagents (history-detail redesign, active-workout live strip, charts, mechanical input-border sweep) + a read-only premium audit; audit's top findings fixed inline.

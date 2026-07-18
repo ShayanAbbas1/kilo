@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
+import { Text } from '@/components/text';
 import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -242,7 +243,7 @@ export default function BodyTab() {
 const styles = StyleSheet.create({
   input: {
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
   },
   entryRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

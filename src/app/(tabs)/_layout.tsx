@@ -1,6 +1,6 @@
 import { Link, Tabs } from 'expo-router';
-import { Text } from 'react-native';
 
+import { Text } from '@/components/text';
 import { useTheme } from '@/hooks/use-theme';
 
 // ponytail: emoji tab icons — no icon package in the SDK 57 template; swap for real icons if it grates
@@ -17,8 +17,8 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        headerTitleStyle: { fontWeight: '700' },
-        tabBarLabelStyle: { fontWeight: '600' },
+        headerTitleStyle: { fontFamily: 'SpaceGrotesk_700Bold' },
+        tabBarLabelStyle: { fontFamily: 'SpaceGrotesk_600SemiBold' },
         headerRight: () => (
           <Link href="/settings" style={{ fontSize: 20, paddingHorizontal: 16 }}>
             ⚙️
