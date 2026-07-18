@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -17,6 +17,7 @@ import { formatDay, todayStr } from '@/lib/dates';
 import { projectToTarget } from '@/lib/projection';
 import { useSettings } from '@/lib/settings-context';
 import { estimateTdee } from '@/lib/tdee';
+import { toast } from '@/lib/toast';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
 
 export default function BodyTab() {
@@ -48,20 +49,24 @@ export default function BodyTab() {
 
   const saveWeight = async () => {
     const n = parseFloat(weightText.replace(',', '.'));
-    if (isNaN(n) || n <= 0) return;
+    if (isNaN(n) || n <= 0) { toast('Enter a valid weight'); return; }
     await upsertWeighIn(db, today, fromDisplayWeight(n, unit));
+    Keyboard.dismiss();
+    toast(`Weigh-in saved — ${n} ${unit}`);
     reload();
   };
 
   const addEntry = async () => {
     const kcal = parseInt(kcalText, 10);
-    if (isNaN(kcal) || kcal <= 0) return;
+    if (isNaN(kcal) || kcal <= 0) { toast('Enter calories first'); return; }
     const protein = parseFloat(proteinText.replace(',', '.'));
     await addCalorieEntry(
       db, today, kcal, labelText.trim() || undefined, isNaN(protein) ? undefined : protein);
     setKcalText('');
     setLabelText('');
     setProteinText('');
+    Keyboard.dismiss();
+    toast(`Added ${kcal} kcal`);
     reload();
   };
 

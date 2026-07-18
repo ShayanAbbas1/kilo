@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 // ponytail: legacy FS API — stable string read/write; migrate to the new File class if expo drops legacy
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { exportAll, getSetting, importAll, setSetting } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
+import { toast } from '@/lib/toast';
 import { Unit, formatWeight, fromDisplayWeight } from '@/lib/units';
 import { todayStr } from '@/lib/dates';
 
@@ -33,17 +34,26 @@ export default function SettingsScreen() {
 
   const saveRest = () => {
     const n = parseInt(restText, 10);
-    if (!isNaN(n) && n > 0) setSetting(db, 'rest_seconds', String(n));
+    if (isNaN(n) || n <= 0) { toast('Enter seconds, e.g. 120'); return; }
+    setSetting(db, 'rest_seconds', String(n));
+    Keyboard.dismiss();
+    toast(`Rest timer set to ${n}s`);
   };
 
   const saveTarget = () => {
     const n = parseInt(targetText, 10);
-    setKcalTarget(isNaN(n) || n <= 0 ? null : n);
+    const cleared = isNaN(n) || n <= 0;
+    setKcalTarget(cleared ? null : n);
+    Keyboard.dismiss();
+    toast(cleared ? 'Calorie target cleared' : `Calorie target set to ${n} kcal`);
   };
 
   const saveGoalWeight = () => {
     const n = parseFloat(goalWeightText.replace(',', '.'));
-    setGoalWeightKg(isNaN(n) || n <= 0 ? null : fromDisplayWeight(n, unit));
+    const cleared = isNaN(n) || n <= 0;
+    setGoalWeightKg(cleared ? null : fromDisplayWeight(n, unit));
+    Keyboard.dismiss();
+    toast(cleared ? 'Weight goal cleared' : `Weight goal set to ${n} ${unit}`);
   };
 
   const onExport = async () => {
