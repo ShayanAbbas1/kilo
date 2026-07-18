@@ -74,7 +74,7 @@ export default function MuscleDetail() {
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
+              <Text style={{ color: metric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {m === 'sets' ? 'Sets' : 'Tonnage'}
               </Text>
             </Pressable>
@@ -104,7 +104,7 @@ export default function MuscleDetail() {
                     opacity: pressed ? 0.7 : 1,
                   })}>
                   <Text style={{
-                    color: activeHead?.head === h.head ? '#fff' : colors.text,
+                    color: activeHead?.head === h.head ? colors.onTint : colors.text,
                     fontWeight: '600', fontSize: 12,
                   }}>
                     {h.head}

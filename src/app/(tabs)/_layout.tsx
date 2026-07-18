@@ -17,6 +17,8 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
+        headerTitleStyle: { fontWeight: '700' },
+        tabBarLabelStyle: { fontWeight: '600' },
         headerRight: () => (
           <Link href="/settings" style={{ fontSize: 20, paddingHorizontal: 16 }}>
             ⚙️

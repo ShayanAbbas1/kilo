@@ -190,7 +190,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
         backgroundColor: selected ? colors.tint : colors.backgroundElement,
         opacity: pressed ? 0.7 : 1,
       })}>
-      <Text style={{ color: selected ? '#fff' : colors.text, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: selected ? colors.onTint : colors.text, fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }

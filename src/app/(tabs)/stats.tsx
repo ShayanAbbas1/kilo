@@ -201,7 +201,7 @@ export default function StatsTab() {
                 backgroundColor: range === r ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: range === r ? '#fff' : colors.text, fontWeight: '600', fontSize: 13 }}>
+              <Text style={{ color: range === r ? colors.onTint : colors.text, fontWeight: '600', fontSize: 13 }}>
                 {r === 'all' ? 'All' : `${r}d`}
               </Text>
             </Pressable>
@@ -236,7 +236,7 @@ export default function StatsTab() {
                 paddingVertical: 6, paddingHorizontal: 14, borderRadius: 8,
                 backgroundColor: colors.tint, opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Add</Text>
+              <Text style={{ color: colors.onTint, fontWeight: '600', fontSize: 13 }}>Add</Text>
             </Pressable>
           </View>
         )}
@@ -254,7 +254,7 @@ export default function StatsTab() {
                 opacity: pressed ? 0.7 : 1,
               })}>
               <Text style={{
-                color: muscleMetric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12,
+                color: muscleMetric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12,
               }}>
                 {m === 'sets' ? 'Sets' : 'Tonnage'}
               </Text>

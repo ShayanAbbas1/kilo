@@ -2,6 +2,15 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-18 — Ember theme (colors + typography)
+
+Owner asked for a colors/typography pass; picked ember orange + polished system fonts (over violet/green/Inter) via option prompt. All in `theme.ts` since every screen already reads `useTheme()`:
+
+- **Palette**: warm stone neutrals (light `#F5F1EC` cards / warm near-black text; dark keeps pure-black OLED bg with warm-shifted `#1E1A17` cards), tint `#EA580C` light / `#FF8A3C` dark. New `onTint` token — dark text on the bright dark-mode orange beats white for contrast; replaced 9 hardcoded `'#fff'`-on-tint spots (chips, buttons, calendar selected day) across 6 files. `accent` moved orange→cyan because the Trendline's kcal line would have collided with the now-orange weight line.
+- **Nav chrome**: `_layout.tsx` builds react-navigation themes from the palette (headers/tab bar were stock); bold header titles + tab labels. `headerTitleStyle` only accepts fontFamily/Size/Weight — no letterSpacing.
+- **Type scale**: `Type` in theme.ts (stat/title/body/caption/label, `satisfies Record<string, TextStyle>`); SectionTitle uses `Type.label`, TDEE number uses `Type.stat` (24→30 w/ tight tracking), buttons bumped to 700. Deliberately did NOT sweep all ~100 inline fontSizes — sizes were already consistent (13/16/17); Type is there for new code.
+- Verified: tsc, lint, 9 test suites. NOT eyeballed on device — owner should check dark + light before merging.
+
 ## 2026-07-18 — Session: all-time + custom date ranges
 
 Owner asked for an "All time" chip on the date-range filter, user-creatable custom ranges, and confirmation that existing ranges are rolling `now − N days` windows.

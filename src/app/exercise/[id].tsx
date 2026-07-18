@@ -189,7 +189,7 @@ export default function ExerciseDetail() {
                 backgroundColor: metric === m ? colors.tint : colors.backgroundSelected,
                 opacity: pressed ? 0.7 : 1,
               })}>
-              <Text style={{ color: metric === m ? '#fff' : colors.text, fontWeight: '600', fontSize: 12 }}>
+              <Text style={{ color: metric === m ? colors.onTint : colors.text, fontWeight: '600', fontSize: 12 }}>
                 {METRIC_LABEL[m]}
               </Text>
             </Pressable>

@@ -6,7 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Button, Card, EmptyState, SectionTitle } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   CalorieDay, CalorieEntry, WeightRow,
@@ -174,7 +174,7 @@ export default function BodyTab() {
         <Card style={{ gap: 2 }}>
           {tdee.ok ? (
             <>
-              <Text style={{ color: colors.text, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ color: colors.text, ...Type.stat }}>
                 ≈ {Math.round(tdee.tdee).toLocaleString()} kcal/day
               </Text>
               <Text style={{ color: colors.textSecondary, fontSize: 13, fontVariant: ['tabular-nums'] }}>

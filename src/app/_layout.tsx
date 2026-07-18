@@ -2,17 +2,35 @@ import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { useColorScheme } from 'react-native';
 
+import { Colors } from '@/constants/theme';
 import { DB_NAME, migrate } from '@/db';
 import { SettingsProvider } from '@/lib/settings-context';
 import '@/lib/rest-notification'; // registers notification handler + Android channel once
 
+// nav chrome (headers, tab bar) on the app palette instead of react-navigation stock
+const navTheme = (base: typeof DefaultTheme, c: typeof Colors.light | typeof Colors.dark) => ({
+  ...base,
+  colors: {
+    ...base.colors,
+    primary: c.tint,
+    background: c.background,
+    card: c.background,
+    text: c.text,
+    border: c.backgroundSelected,
+    notification: c.danger,
+  },
+});
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider
+      value={colorScheme === 'dark'
+        ? navTheme(DarkTheme, Colors.dark)
+        : navTheme(DefaultTheme, Colors.light)}>
       <SQLiteProvider databaseName={DB_NAME} onInit={migrate}>
         <SettingsProvider>
-          <Stack>
+          <Stack screenOptions={{ headerTitleStyle: { fontWeight: '700' } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="workout/[id]" options={{ title: 'Workout' }} />
             <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />

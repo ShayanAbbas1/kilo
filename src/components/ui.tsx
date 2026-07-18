@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Spacing, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type ButtonKind = 'primary' | 'secondary' | 'danger';
@@ -17,7 +17,7 @@ export function Button({
 }) {
   const colors = useTheme();
   const bg = kind === 'primary' ? colors.tint : colors.backgroundElement;
-  const fg = kind === 'primary' ? '#fff' : kind === 'danger' ? colors.danger : colors.text;
+  const fg = kind === 'primary' ? colors.onTint : kind === 'danger' ? colors.danger : colors.text;
   return (
     <Pressable
       onPress={onPress}
@@ -27,7 +27,7 @@ export function Button({
         { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
         style,
       ]}>
-      <Text style={{ color: fg, fontWeight: '600', fontSize: 16 }}>{title}</Text>
+      <Text style={{ color: fg, fontWeight: '700', fontSize: 16, letterSpacing: 0.2 }}>{title}</Text>
     </Pressable>
   );
 }
@@ -70,10 +70,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...Type.label,
     marginBottom: Spacing.two,
     marginTop: Spacing.three,
   },

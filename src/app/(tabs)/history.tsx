@@ -133,7 +133,7 @@ export default function HistoryTab() {
                           isSelected && { backgroundColor: colors.tint },
                           !isSelected && isToday && { borderWidth: 1, borderColor: colors.tint },
                         ]}>
-                        <Text style={{ color: isSelected ? '#fff' : colors.text, fontSize: 13 }}>
+                        <Text style={{ color: isSelected ? colors.onTint : colors.text, fontSize: 13 }}>
                           {Number(day.slice(-2))}
                         </Text>
                       </View>
