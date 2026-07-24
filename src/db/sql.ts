@@ -1,6 +1,14 @@
 // Pure SQL, no expo imports — also executed by scripts/test-db.mjs against node:sqlite.
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
+
+/**
+ * Effective load of a set: bodyweight snapshot + added weight. A bodyweight
+ * exercise stores *added* load in weight_kg (Strong's "+kg"), so a pure
+ * bodyweight set is bodyweight + 0 and a barbell set is 0 + weight.
+ * Assumes the sets table is aliased `s`.
+ */
+export const LOAD_KG = 'COALESCE(s.bodyweight_kg, 0) + COALESCE(s.weight_kg, 0)';
 
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS meta (
@@ -16,7 +24,9 @@ CREATE TABLE IF NOT EXISTS exercises (
   primary_muscles TEXT NOT NULL DEFAULT '[]',
   secondary_muscles TEXT NOT NULL DEFAULT '[]',
   instructions TEXT NOT NULL DEFAULT '',
-  is_custom INTEGER NOT NULL DEFAULT 0
+  is_custom INTEGER NOT NULL DEFAULT 0,
+  is_bodyweight INTEGER NOT NULL DEFAULT 0,
+  is_timed INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS workouts (
@@ -45,7 +55,9 @@ CREATE TABLE IF NOT EXISTS sets (
   set_type TEXT NOT NULL DEFAULT 'working',
   completed INTEGER NOT NULL DEFAULT 0,
   completed_at TEXT,
-  rpe REAL
+  rpe REAL,
+  duration_seconds INTEGER,
+  bodyweight_kg REAL
 );
 
 CREATE TABLE IF NOT EXISTS routines (
@@ -100,13 +112,55 @@ ALTER TABLE workout_exercises ADD COLUMN superset_with_next INTEGER NOT NULL DEF
 ALTER TABLE routine_exercises ADD COLUMN superset_with_next INTEGER NOT NULL DEFAULT 0;
 `;
 
+/** v4 -> v5: bodyweight + timed sets. */
+export const MIGRATION_V4_SQL = `
+ALTER TABLE sets ADD COLUMN duration_seconds INTEGER;
+ALTER TABLE sets ADD COLUMN bodyweight_kg REAL;
+ALTER TABLE exercises ADD COLUMN is_bodyweight INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE exercises ADD COLUMN is_timed INTEGER NOT NULL DEFAULT 0;
+`;
+
+/**
+ * Initial values for the v5 flags, run by both migrate() and seed() — the seed
+ * JSON carries neither flag. Stretches are excluded from is_bodyweight so a
+ * hamstring stretch doesn't add body weight to tonnage. is_timed is an explicit
+ * id list, not a name match: "hang" would catch nine rep-based Hang Cleans.
+ * Both are user-overridable per exercise, which is what handles the long tail.
+ */
+export const SEED_EXERCISE_FLAGS_SQL = `
+UPDATE exercises SET is_bodyweight = 1
+  WHERE equipment = 'body only' AND category != 'stretching';
+UPDATE exercises SET is_timed = 1 WHERE id IN (
+  'Plank', 'Side_Bridge', 'One_Handed_Hang', 'Farmers_Walk',
+  'Isometric_Neck_Exercise_-_Front_And_Back', 'Isometric_Neck_Exercise_-_Sides'
+);
+`;
+
+/**
+ * Column assignment that snapshots the latest weigh-in onto a set being
+ * completed, but only for a bodyweight exercise. A snapshot rather than a
+ * query-time join so history doesn't shift when the user's weight does.
+ * Spliced into updateSet's UPDATE, where the bare `sets` name is the row
+ * being updated.
+ */
+export const BODYWEIGHT_SNAPSHOT_SQL = `bodyweight_kg = (
+  SELECT wi.weight_kg FROM weigh_ins wi
+  WHERE (
+    SELECT e.is_bodyweight FROM sets s
+    JOIN workout_exercises we ON we.id = s.workout_exercise_id
+    JOIN exercises e ON e.id = we.exercise_id
+    WHERE s.id = sets.id
+  ) = 1
+  ORDER BY wi.date DESC LIMIT 1
+)`;
+
 /**
  * Sets the user did for this exercise in their most recent FINISHED workout
  * that contains it — the "previous session" ghost values.
  * Params: exercise_id
  */
 export const PREV_SETS_SQL = `
-SELECT s.position, s.weight_kg, s.reps, s.set_type
+SELECT s.position, s.weight_kg, s.reps, s.set_type, s.duration_seconds
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 WHERE we.exercise_id = ?
@@ -151,14 +205,14 @@ LIMIT ?;
 export const EXERCISE_PROGRESSION_SQL = `
 SELECT date(w.started_at, 'localtime') AS day,
   MAX(s.weight_kg) AS top_weight,
-  MAX(s.weight_kg * (1 + s.reps / 30.0)) AS est1rm,
-  SUM(s.weight_kg * s.reps) AS volume
+  MAX((${LOAD_KG}) * (1 + s.reps / 30.0)) AS est1rm,
+  SUM((${LOAD_KG}) * s.reps) AS volume
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
 WHERE we.exercise_id = ?
   AND s.completed = 1 AND s.set_type != 'warmup'
-  AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+  AND s.reps IS NOT NULL AND (s.weight_kg IS NOT NULL OR s.bodyweight_kg IS NOT NULL)
   AND w.finished_at IS NOT NULL
 GROUP BY day
 ORDER BY day;
@@ -172,13 +226,13 @@ ORDER BY day;
 export const STALL_CANDIDATES_SQL = `
 SELECT we.exercise_id AS id, e.name AS name,
   date(w.started_at, 'localtime') AS day,
-  MAX(s.weight_kg * (1 + s.reps / 30.0)) AS est1rm
+  MAX((${LOAD_KG}) * (1 + s.reps / 30.0)) AS est1rm
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
 JOIN exercises e ON e.id = we.exercise_id
 WHERE s.completed = 1 AND s.set_type != 'warmup'
-  AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+  AND s.reps IS NOT NULL AND (s.weight_kg IS NOT NULL OR s.bodyweight_kg IS NOT NULL)
   AND w.finished_at IS NOT NULL
   AND date(w.started_at, 'localtime') >= ?
 GROUP BY we.exercise_id, day
@@ -191,7 +245,7 @@ ORDER BY id, day;
  */
 export const MUSCLE_SETS_SQL = `
 SELECT je.value AS muscle, COUNT(*) AS sets,
-  COALESCE(SUM(s.weight_kg * s.reps), 0) AS tonnage
+  COALESCE(SUM((${LOAD_KG}) * s.reps), 0) AS tonnage
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
@@ -235,7 +289,7 @@ LIMIT ?;
 /** Workouts + tonnage since a date (weekly summary). Params: since ISO datetime */
 export const PERIOD_SUMMARY_SQL = `
 SELECT COUNT(DISTINCT w.id) AS workouts,
-  COALESCE(SUM(CASE WHEN s.completed = 1 THEN s.weight_kg * s.reps ELSE 0 END), 0) AS tonnage_kg
+  COALESCE(SUM(CASE WHEN s.completed = 1 THEN (${LOAD_KG}) * s.reps ELSE 0 END), 0) AS tonnage_kg
 FROM workouts w
 LEFT JOIN workout_exercises we ON we.workout_id = w.id
 LEFT JOIN sets s ON s.workout_exercise_id = we.id
@@ -256,11 +310,12 @@ GROUP BY wk ORDER BY wk;
 
 export const WEEKLY_TONNAGE_SQL = `
 SELECT strftime('%Y-%W', w.started_at, 'localtime') AS wk,
-  SUM(s.weight_kg * s.reps) AS value
+  SUM((${LOAD_KG}) * s.reps) AS value
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
-WHERE s.completed = 1 AND s.weight_kg IS NOT NULL AND s.reps IS NOT NULL
+WHERE s.completed = 1
+  AND s.reps IS NOT NULL AND (s.weight_kg IS NOT NULL OR s.bodyweight_kg IS NOT NULL)
   AND w.finished_at IS NOT NULL AND date(w.started_at, 'localtime') >= ?
 GROUP BY wk ORDER BY wk;
 `;
@@ -280,7 +335,7 @@ GROUP BY wk ORDER BY wk;
  */
 export const MUSCLE_WEEKLY_SETS_SQL = `
 SELECT strftime('%Y-%W', w.started_at, 'localtime') AS wk, COUNT(*) AS sets,
-  COALESCE(SUM(s.weight_kg * s.reps), 0) AS tonnage
+  COALESCE(SUM((${LOAD_KG}) * s.reps), 0) AS tonnage
 FROM sets s
 JOIN workout_exercises we ON we.id = s.workout_exercise_id
 JOIN workouts w ON w.id = we.workout_id
@@ -399,7 +454,7 @@ export const WORKOUT_HISTORY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,
   COUNT(DISTINCT we.exercise_id) AS exercise_count,
   SUM(CASE WHEN s.completed = 1 AND s.set_type != 'warmup' THEN 1 ELSE 0 END) AS set_count,
-  SUM(CASE WHEN s.completed = 1 THEN COALESCE(s.weight_kg,0) * COALESCE(s.reps,0) ELSE 0 END) AS tonnage_kg
+  SUM(CASE WHEN s.completed = 1 THEN (${LOAD_KG}) * COALESCE(s.reps,0) ELSE 0 END) AS tonnage_kg
 FROM workouts w
 LEFT JOIN workout_exercises we ON we.workout_id = w.id
 LEFT JOIN sets s ON s.workout_exercise_id = we.id
@@ -418,7 +473,7 @@ export const WORKOUT_HISTORY_DAY_SQL = `
 SELECT w.id, w.name, w.started_at, w.finished_at,
   COUNT(DISTINCT we.exercise_id) AS exercise_count,
   SUM(CASE WHEN s.completed = 1 AND s.set_type != 'warmup' THEN 1 ELSE 0 END) AS set_count,
-  SUM(CASE WHEN s.completed = 1 THEN COALESCE(s.weight_kg,0) * COALESCE(s.reps,0) ELSE 0 END) AS tonnage_kg
+  SUM(CASE WHEN s.completed = 1 THEN (${LOAD_KG}) * COALESCE(s.reps,0) ELSE 0 END) AS tonnage_kg
 FROM workouts w
 LEFT JOIN workout_exercises we ON we.workout_id = w.id
 LEFT JOIN sets s ON s.workout_exercise_id = we.id

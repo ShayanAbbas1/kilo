@@ -11,8 +11,9 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   Exercise, ProgressionRow, StalledLift,
-  getExercise, getExerciseProgression, getSetting, setSetting, getStalledLifts,
+  getExercise, getExerciseProgression, getSetting, setSetting, setExerciseFlags, getStalledLifts,
 } from '@/db/queries';
+import { Chip } from '@/app/exercise-picker';
 import { MUSCLE_TO_SLUG } from '@/lib/body-map';
 import { muscleEmphasis } from '@/lib/muscle-heads';
 import { projectToTarget } from '@/lib/projection';
@@ -92,6 +93,17 @@ export default function ExerciseDetail() {
         },
       },
     ]);
+  };
+
+  // seeded flags are a guess, so these are editable on every exercise, not just custom ones
+  const saveFlags = (isBodyweight: boolean, isTimed: boolean) => {
+    if (!exercise) return;
+    setExercise({
+      ...exercise,
+      is_bodyweight: isBodyweight ? 1 : 0,
+      is_timed: isTimed ? 1 : 0,
+    });
+    setExerciseFlags(db, id, isBodyweight, isTimed);
   };
 
   const primary = exercise ? parseMuscles(exercise.primary_muscles) : [];
@@ -188,6 +200,24 @@ export default function ExerciseDetail() {
           </Text>
         ))}
       </Card>
+
+      {exercise && (
+        <>
+          <SectionTitle>Logs as</SectionTitle>
+          <Card style={{ flexDirection: 'row', gap: Spacing.two }}>
+            <Chip
+              label="Bodyweight"
+              selected={!!exercise.is_bodyweight}
+              onPress={() => saveFlags(!exercise.is_bodyweight, !!exercise.is_timed)}
+            />
+            <Chip
+              label="Timed"
+              selected={!!exercise.is_timed}
+              onPress={() => saveFlags(!!exercise.is_bodyweight, !exercise.is_timed)}
+            />
+          </Card>
+        </>
+      )}
 
       <SectionTitle>Progression</SectionTitle>
       <Card style={{ gap: Spacing.three }}>

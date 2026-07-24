@@ -7,7 +7,7 @@ import {
   EXERCISE_PROGRESSION_SQL, STALL_CANDIDATES_SQL, MUSCLE_SETS_SQL, TOP_EXERCISES_SQL, PERIOD_SUMMARY_SQL,
   WEEKLY_WEIGHT_SQL, WEEKLY_TONNAGE_SQL, WEEKLY_KCAL_SQL, BEST_WEIGHT_SQL, RECENT_EXERCISES_SQL,
   MUSCLE_WEEKLY_SETS_SQL, MUSCLE_EXERCISES_SQL, PR_HISTORY_SQL, MUSCLE_LAST_TRAINED_SQL,
-  MIGRATION_V2_SQL, MIGRATION_V3_SQL, WORKOUT_COPY_EXERCISES_SQL,
+  MIGRATION_V2_SQL, MIGRATION_V3_SQL, MIGRATION_V4_SQL, WORKOUT_COPY_EXERCISES_SQL,
 } from '../src/db/sql.ts';
 
 const db = new DatabaseSync(':memory:');
@@ -283,9 +283,20 @@ oldDb.exec(`
     position INTEGER NOT NULL,
     target_sets INTEGER NOT NULL DEFAULT 3
   );
+  CREATE TABLE exercises (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'strength',
+    equipment TEXT NOT NULL DEFAULT 'other',
+    primary_muscles TEXT NOT NULL DEFAULT '[]',
+    secondary_muscles TEXT NOT NULL DEFAULT '[]',
+    instructions TEXT NOT NULL DEFAULT '',
+    is_custom INTEGER NOT NULL DEFAULT 0
+  );
 `);
 oldDb.exec(MIGRATION_V2_SQL);
 oldDb.exec(MIGRATION_V3_SQL);
+oldDb.exec(MIGRATION_V4_SQL);
 
 const freshDb = new DatabaseSync(':memory:');
 freshDb.exec(SCHEMA_SQL);
@@ -297,6 +308,8 @@ assert.deepEqual(cols(oldDb, 'workout_exercises'), cols(freshDb, 'workout_exerci
   'v1 workout_exercises + migrations match fresh SCHEMA_SQL columns');
 assert.deepEqual(cols(oldDb, 'routine_exercises'), cols(freshDb, 'routine_exercises'),
   'v1 routine_exercises + MIGRATION_V3_SQL matches fresh SCHEMA_SQL columns');
+assert.deepEqual(cols(oldDb, 'exercises'), cols(freshDb, 'exercises'),
+  'v1 exercises + MIGRATION_V4_SQL matches fresh SCHEMA_SQL columns');
 // migrated table is actually usable with the new columns
 oldDb.prepare(
   `INSERT INTO workout_exercises (id, workout_id, exercise_id, position, notes) VALUES ('we', 'w', 'bench', 1, 'note')`,
