@@ -29,13 +29,14 @@ Free, local-first workout + body-weight + calorie tracker. Android-first via Exp
 ### Builds & updates (how the app reaches the phone)
 
 - **JS-only changes (most commits): no build needed.** Pushing to `main` triggers `.eas/workflows/publish-update.yml`, which publishes an EAS Update to the `preview` channel. The installed APK picks it up on next app restart. Manual equivalent: `npx eas-cli update --channel preview --message "..."`.
-- **Native changes (new native module, app.json plugins/config, SDK bump): rebuild the APK** with `npx eas-cli build -p android --profile preview`, then install it from the build page link (https://expo.dev/accounts/shayanabbas/projects/kilo/builds). Also bump `version` in app.json — `runtimeVersion` follows it (`appVersion` policy), which is what stops old APKs from receiving updates their native side can't run.
+- **Native changes (new native module, app.json plugins/config, SDK bump): rebuild the APK** with `npx eas-cli build -p android --profile preview`, then install it from the build page link (https://expo.dev/accounts/shayanabbas/projects/kilo/builds). Also bump `version` in app.json — `runtimeVersion` follows it (`appVersion` policy), which is what stops old APKs from receiving updates their native side can't run. **Then publish a GitHub Release** tagged `v<version>` with the new APK attached — this is the canonical public download (`/releases/latest`), what Obtainium/IzzyOnDroid pull from. `gh release create v<version> <apk> --title "..." --notes "..."`.
+- OTA vs store split: OTA (EAS Update) is the fast lane for JS between APKs; a new GitHub Release is how native changes reach users. Both are live at once — a user gets whichever fires first.
 - OTA updates only apply when the update's runtime version matches the installed build's; a mismatch fails safe (app keeps running the bundled JS, no crash).
 
 ## Conventions
 
 - **Every change lands via PR.** Create a branch, open a PR, the owner reviews and merges — never push directly to `main`. Merging to `main` is what triggers the OTA publish, so a merged PR *is* a release.
-- **README's "Get the app" APK link must stay live.** Any PR with a native change (new APK required) updates that link to the new build's artifact URL in the same PR.
+- **README's "Get the app" link points at `/releases/latest`** — a permanent URL, never hand-edited. A native change (new APK) instead publishes a new GitHub Release with the APK attached (see Builds & updates above); the link resolves to it automatically.
 - FEATURES.md is the spec of record. Any commit that ships, changes, or defers a feature updates FEATURES.md **in the same commit** — check the box, one line on what shipped. Nobody will ask for this; it's part of "done".
 - This rule propagates: when dispatching a subagent or workflow to build a feature, its task prompt must include the FEATURES.md edit and end with "read AGENTS.md first".
 - Weights in kg (REAL), dates as ISO-8601 strings, all in SQLite
