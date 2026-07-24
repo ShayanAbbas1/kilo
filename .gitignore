@@ -44,3 +44,6 @@ example
 
 # agent worktrees
 .claude/worktrees/
+
+# private notes (personal Claude conversation log)
+WORKLOG.md
