@@ -10,6 +10,16 @@ Built by a lifter who lost 40+ kg tracking all of this manually across paywalled
 
 > Installing over an existing Kilo keeps your data. Don't uninstall first — all data lives on-device.
 
+### Auto-updating install (recommended)
+
+Rather than re-downloading the APK by hand, use [Obtainium](https://github.com/ImranR98/Obtainium) — an open-source installer that tracks this repo's releases and updates Kilo automatically:
+
+1. Install Obtainium (from its [releases](https://github.com/ImranR98/Obtainium/releases), or via F-Droid / IzzyOnDroid).
+2. **Add app** → paste `https://github.com/ShayanAbbas1/kilo`. On your phone you can instead tap **[Add Kilo to Obtainium](obtainium://add/https://github.com/ShayanAbbas1/kilo)** to prefill it.
+3. Install. Obtainium notifies you whenever a new release ships and updates in place — your on-device data is untouched.
+
+Day-to-day improvements still arrive over the air on app restart; Obtainium only steps in for the occasional new APK (native changes).
+
 ## Why it exists
 
 - **Free forever, no paywall.** No backend, no accounts, no sync servers. All data lives on-device in SQLite; export/import as JSON means your data is always yours.
