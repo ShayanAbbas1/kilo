@@ -1,0 +1,11 @@
+Bodyweight and timed exercises
+
+- Bodyweight exercises now log as "+kg" (added weight) and count toward
+  tonnage, so sets of pull-ups no longer read as no work done. They also
+  show up in the progression graph.
+- Timed exercises (planks, carries, hangs) can be logged at all now.
+- New app icon.
+- Violet is the default theme.
+
+Updates now arrive by installing a new release rather than over the air.
+Obtainium or your F-Droid client will pick them up automatically.
