@@ -10,7 +10,6 @@ Built by a lifter who lost 40+ kg tracking all of it by hand across paywalled ap
 
 **Or: [download the APK directly](https://github.com/ShayanAbbas1/kilo/releases/latest).** No automatic updates — come back to this link for new releases.
 
-**IzzyOnDroid:** submitted, not listed yet — this line becomes a link once it is.
 
 > Installing over an existing Kilo keeps your data — don't uninstall first. All data lives on-device.
 

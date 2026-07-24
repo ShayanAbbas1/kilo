@@ -2,7 +2,7 @@
   "expo": {
     "name": "Kilo",
     "slug": "kilo",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kilo",
@@ -16,7 +16,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.shayanabbas.kilo",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "output": "static",
@@ -37,7 +37,18 @@
       ],
       "expo-sqlite",
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": [
+              "armeabi-v7a",
+              "arm64-v8a"
+            ]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
