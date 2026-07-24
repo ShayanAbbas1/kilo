@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Keyboard, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 // ponytail: legacy FS API — stable string read/write; migrate to the new File class if expo drops legacy
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -9,8 +9,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 
 import { Text } from '@/components/text';
 import { Button, Card, SectionTitle } from '@/components/ui';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Spacing, ThemeMode, ThemeName, Themes } from '@/constants/theme';
+import { useResolvedScheme, useTheme } from '@/hooks/use-theme';
 import { exportAll, getSetting, importAll, setSetting } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
 import { toast } from '@/lib/toast';
@@ -20,8 +20,10 @@ import { todayStr } from '@/lib/dates';
 export default function SettingsScreen() {
   const db = useSQLiteContext();
   const colors = useTheme();
+  const scheme = useResolvedScheme();
   const {
     unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe, goalWeightKg, setGoalWeightKg,
+    themeName, setThemeName, themeMode, setThemeMode,
   } = useSettings();
   const [targetText, setTargetText] = useState(kcalTarget ? String(kcalTarget) : '');
   const [restText, setRestText] = useState('');
@@ -99,6 +101,48 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
+      <SectionTitle>Appearance</SectionTitle>
+      <Card style={{ flexDirection: 'row', gap: Spacing.two, marginBottom: Spacing.two }}>
+        {(['system', 'light', 'dark'] as ThemeMode[]).map((m) => (
+          <Button
+            key={m}
+            title={m === 'system' ? 'System' : m === 'light' ? 'Light' : 'Dark'}
+            kind={themeMode === m ? 'primary' : 'secondary'}
+            style={{ flex: 1 }}
+            onPress={() => setThemeMode(m)}
+          />
+        ))}
+      </Card>
+      <Card style={{ gap: Spacing.two }}>
+        {(Object.keys(Themes) as ThemeName[]).map((key) => {
+          const variant = Themes[key][scheme];
+          const selected = themeName === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => setThemeName(key)}
+              style={({ pressed }) => [
+                styles.themeRow,
+                {
+                  borderColor: selected ? colors.tint : colors.border,
+                  backgroundColor: variant.background,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[variant.tint, variant.accent, variant.text].map((c, i) => (
+                  <View key={i} style={[styles.swatch, { backgroundColor: c, borderColor: variant.border }]} />
+                ))}
+              </View>
+              <Text style={{ flex: 1, color: variant.text, fontWeight: '700', fontSize: 16 }}>
+                {Themes[key].name}
+              </Text>
+              {selected ? <Text style={{ color: colors.tint, fontSize: 18, fontWeight: '800' }}>✓</Text> : null}
+            </Pressable>
+          );
+        })}
+      </Card>
+
       <SectionTitle>Units</SectionTitle>
       <Card style={{ flexDirection: 'row', gap: Spacing.two }}>
         {(['kg', 'lbs'] as Unit[]).map((u) => (
@@ -199,5 +243,12 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12, fontSize: 16,
     borderWidth: StyleSheet.hairlineWidth, fontFamily: 'SpaceGrotesk_400Regular',
+  },
+  themeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.three,
+    padding: Spacing.three, borderRadius: 12, borderWidth: 1.5,
+  },
+  swatch: {
+    width: 22, height: 22, borderRadius: 11, borderWidth: StyleSheet.hairlineWidth,
   },
 });

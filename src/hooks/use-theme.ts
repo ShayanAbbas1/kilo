@@ -1,14 +1,22 @@
 /**
- * Learn more about light and dark modes:
+ * Resolves the active palette from the user's chosen theme + mode.
+ * Mode 'system' follows the OS; 'light'/'dark' force it.
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
+import { Themes } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSettings } from '@/lib/settings-context';
+
+export function useResolvedScheme(): 'light' | 'dark' {
+  const os = useColorScheme();
+  const { themeMode } = useSettings();
+  if (themeMode === 'system') return os === 'dark' ? 'dark' : 'light';
+  return themeMode;
+}
 
 export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'unspecified' ? 'light' : scheme;
-
-  return Colors[theme];
+  const { themeName } = useSettings();
+  const scheme = useResolvedScheme();
+  return Themes[themeName][scheme];
 }

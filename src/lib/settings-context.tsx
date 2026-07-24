@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { getSetting, setSetting } from '../db/queries';
+import { DEFAULT_THEME, ThemeMode, ThemeName, Themes } from '../constants/theme';
 import { Unit } from './units';
 
 type AppSettings = {
@@ -12,6 +13,10 @@ type AppSettings = {
   setShowRpe: (b: boolean) => void;
   goalWeightKg: number | null;
   setGoalWeightKg: (n: number | null) => void;
+  themeName: ThemeName;
+  setThemeName: (t: ThemeName) => void;
+  themeMode: ThemeMode;
+  setThemeMode: (m: ThemeMode) => void;
 };
 
 const Ctx = createContext<AppSettings>({
@@ -23,6 +28,10 @@ const Ctx = createContext<AppSettings>({
   setShowRpe: () => {},
   goalWeightKg: null,
   setGoalWeightKg: () => {},
+  themeName: DEFAULT_THEME,
+  setThemeName: () => {},
+  themeMode: 'system',
+  setThemeMode: () => {},
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -31,6 +40,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [kcalTarget, setKcalTargetState] = useState<number | null>(null);
   const [showRpe, setShowRpeState] = useState(false);
   const [goalWeightKg, setGoalWeightKgState] = useState<number | null>(null);
+  const [themeName, setThemeNameState] = useState<ThemeName>(DEFAULT_THEME);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
 
   useEffect(() => {
     (async () => {
@@ -42,6 +53,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setShowRpeState(r === '1');
       const g = await getSetting(db, 'goal_weight_kg');
       if (g) setGoalWeightKgState(Number(g));
+      const th = await getSetting(db, 'theme');
+      if (th && th in Themes) setThemeNameState(th as ThemeName);
+      const tm = await getSetting(db, 'theme_mode');
+      if (tm === 'light' || tm === 'dark' || tm === 'system') setThemeModeState(tm);
     })();
   }, [db]);
 
@@ -65,9 +80,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSetting(db, 'goal_weight_kg', n == null ? '' : String(n));
   }, [db]);
 
+  const setThemeName = useCallback((t: ThemeName) => {
+    setThemeNameState(t);
+    setSetting(db, 'theme', t);
+  }, [db]);
+
+  const setThemeMode = useCallback((m: ThemeMode) => {
+    setThemeModeState(m);
+    setSetting(db, 'theme_mode', m);
+  }, [db]);
+
   return (
     <Ctx.Provider value={{
       unit, setUnit, kcalTarget, setKcalTarget, showRpe, setShowRpe, goalWeightKg, setGoalWeightKg,
+      themeName, setThemeName, themeMode, setThemeMode,
     }}>
       {children}
     </Ctx.Provider>
