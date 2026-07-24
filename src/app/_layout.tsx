@@ -35,6 +35,10 @@ function Nav() {
         <Stack.Screen name="history/[id]" options={{ title: 'Workout' }} />
         <Stack.Screen name="routine/[id]" options={{ title: 'Routine' }} />
         <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
+        <Stack.Screen
+          name="exercise/edit/[id]"
+          options={{ presentation: 'modal', title: 'Edit Exercise' }}
+        />
         <Stack.Screen name="muscle/[slug]" options={{ title: 'Muscle' }} />
         <Stack.Screen
           name="exercise-picker"

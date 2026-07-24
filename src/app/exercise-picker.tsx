@@ -19,7 +19,7 @@ export const MUSCLES = [
   'biceps', 'triceps', 'forearms', 'quadriceps', 'hamstrings', 'glutes',
   'calves', 'abdominals', 'abductors', 'adductors', 'neck',
 ];
-const EQUIPMENT = ['barbell', 'dumbbell', 'machine', 'cable', 'kettlebells', 'body only', 'bands', 'other'];
+export const EQUIPMENT = ['barbell', 'dumbbell', 'machine', 'cable', 'kettlebells', 'body only', 'bands', 'other'];
 
 export default function ExercisePicker() {
   const { workoutId, routineId } = useLocalSearchParams<{ workoutId: string; routineId: string }>();

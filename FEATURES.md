@@ -8,7 +8,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 
 ### Workout logging (Strong-parity)
 - [x] Exercise library seeded from free-exercise-db (873 exercises with muscle groups, instructions)
-- [x] Custom exercises (name + muscle group + equipment)
+- [x] Custom exercises (name + muscle group + equipment) — editable after creation via an "Edit" action on the exercise page (`/exercise/edit/[id]`, custom exercises only)
 - [x] Start empty workout → add exercises → log sets (weight × reps)
 - [x] Previous-session values shown per set (the "what did I do last time" ghost text)
 - [x] Set types: warm-up / working / failure (tap the set number to cycle)

@@ -149,6 +149,16 @@ export async function createCustomExercise(
   return id;
 }
 
+/** Edit a user-created exercise. The is_custom guard makes it a no-op on seed exercises. */
+export async function updateCustomExercise(
+  db: SQLiteDatabase, id: string, name: string, primaryMuscle: string, equipment: string,
+): Promise<void> {
+  await db.runAsync(
+    `UPDATE exercises SET name = ?, equipment = ?, primary_muscles = ?
+     WHERE id = ? AND is_custom = 1`,
+    name.trim(), equipment, JSON.stringify([primaryMuscle]), id);
+}
+
 // ---------- workouts ----------
 
 export async function getActiveWorkout(db: SQLiteDatabase): Promise<Workout | null> {
