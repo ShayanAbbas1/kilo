@@ -15,8 +15,8 @@
       "android": {
         "buildType": "apk"
       },
-      "updates": {
-        "enabled": false
+      "env": {
+        "KILO_OTA": "off"
       }
     }
   }
