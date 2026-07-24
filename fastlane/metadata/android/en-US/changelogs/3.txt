@@ -1,0 +1,7 @@
+Smaller download.
+
+The APK no longer bundles x86 and x86_64 native libraries. Those are
+emulator-only architectures that no phone loads, and they accounted for
+roughly a quarter of the download.
+
+No functional changes. ARM devices (every phone) are unaffected.
