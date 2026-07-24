@@ -2,6 +2,10 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-24 — Obtainium install path (README)
+
+Documented Obtainium as the recommended install: README "Get the app" gained an "Auto-updating install" subsection — install Obtainium, add `https://github.com/ShayanAbbas1/kilo`, get auto-updates from GitHub Releases. Included the one-tap `obtainium://add/<url>` deeplink (verified the scheme/format against Obtainium's source — `AndroidManifest.xml` registers `obtainium://`, `DEVELOPER_GUIDE.md` confirms `obtainium://add/<url>`; not `app`). No dev-side setup exists for Obtainium — it's a client that watches releases — so this is docs-only. Next FOSS step: IzzyOnDroid submission.
+
 ## 2026-07-24 — Public distribution: GitHub Releases + v1.0.0
 
 Owner wants to start distributing on open-source platforms. First move: make GitHub Releases the canonical APK home instead of the ephemeral `expo.dev/artifacts/...` URL (which changed every native build and forced a README edit each time — that chore is now gone).
