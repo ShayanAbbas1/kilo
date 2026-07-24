@@ -1,0 +1,7 @@
+First public release.
+
+- Workout logging: sets, rest timer, routines, supersets, RPE, plate calculator
+- Body weight and calorie tracking
+- Analytics: per-exercise progression, muscle heatmap, PR feed, the Trendline
+- Import from Strong or Hevy (CSV)
+- JSON export/import for backup

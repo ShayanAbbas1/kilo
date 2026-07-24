@@ -1,0 +1,15 @@
+Kilo is a free, local-first workout, body-weight and calorie tracker. Built by a lifter who lost 40+ kg tracking all of it by hand across paywalled apps, Kilo puts training, weight and calories on one timeline — free, forever.
+
+Free forever, no paywall. No backend, no accounts, no sync servers. All data lives on-device in SQLite and exports to JSON, so it's always yours. Nothing to host means nothing to charge for.
+
+Logging that matches Strong. Sets with last-session ghost values, a rest timer, routines, supersets, RPE, and a plate calculator. Import your existing Strong or Hevy history from CSV so your analytics aren't empty on day one.
+
+Analytics no free app has:
+- Per-exercise progression — estimated 1RM, top weight, and volume over time
+- Sets and tonnage per muscle group, shown on an anatomical heatmap
+- A PR feed that flags new bests as you log them
+- The Trendline — body weight, weekly tonnage and calories on one chart, so you can see how they move together
+
+Manual calorie entry, on purpose. No barcode scanning or auto-logging — portion, prep and brand variance make "scan and forget" quietly wrong. A few honest taps instead.
+
+Kilo is Android-first and works offline. There are no ads, no in-app purchases and no tracking.

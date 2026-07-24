@@ -6,11 +6,13 @@ Built by a lifter who lost 40+ kg tracking all of it by hand across paywalled ap
 
 ## 📲 Get the app
 
-**[Download the latest Android APK](https://github.com/ShayanAbbas1/kilo/releases/latest)** — install it once; it updates itself over the air on restart.
+**Recommended: [Obtainium](https://github.com/ImranR98/Obtainium).** Add the repo — paste `https://github.com/ShayanAbbas1/kilo`, or tap the [one-tap link](obtainium://add/https://github.com/ShayanAbbas1/kilo) on your phone. It installs the latest release and checks GitHub for new ones, so updates come to you.
+
+**Or: [download the APK directly](https://github.com/ShayanAbbas1/kilo/releases/latest).** No automatic updates — come back to this link for new releases.
+
+**IzzyOnDroid:** submitted, not listed yet — this line becomes a link once it is.
 
 > Installing over an existing Kilo keeps your data — don't uninstall first. All data lives on-device.
-
-**Prefer auto-updates?** Add the repo to [Obtainium](https://github.com/ImranR98/Obtainium): paste `https://github.com/ShayanAbbas1/kilo`, or tap the [one-tap link](obtainium://add/https://github.com/ShayanAbbas1/kilo) on your phone. It installs the latest release and updates in place whenever a new one ships.
 
 ## Why it exists
 
