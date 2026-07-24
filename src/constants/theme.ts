@@ -6,10 +6,10 @@
 import { Platform, TextStyle } from 'react-native';
 
 // Each theme is a color scheme with a light + dark variant sharing the same token
-// keys, so every consumer (useTheme) is palette-agnostic. Ember is the default:
-// warm-tinted surfaces + ember-orange brand tint, backgrounds deliberately NOT
-// pure black/white (dark = layered espresso, light = warm paper with white cards).
-// The other palettes follow the same structure per hue family.
+// keys, so every consumer (useTheme) is palette-agnostic. Violet is the default
+// (see DEFAULT_THEME below). Backgrounds are deliberately NOT pure black/white
+// (e.g. Ember's dark = layered espresso, light = warm paper with white cards);
+// every palette follows the same structure per hue family.
 // ponytail: hand-tuned hexes — tweak freely, contrast just needs to hold in both modes.
 export const Themes = {
   ember: {
@@ -171,7 +171,7 @@ export const Themes = {
 
 export type ThemeName = keyof typeof Themes;
 
-export const DEFAULT_THEME: ThemeName = 'ember';
+export const DEFAULT_THEME: ThemeName = 'violet';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 

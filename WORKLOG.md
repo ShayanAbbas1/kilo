@@ -2,6 +2,12 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-24 — Violet default theme + screenshot swap
+
+Pre-announce polish, all Violet (the theme owner is sharing):
+- **Default theme Ember → Violet** — `DEFAULT_THEME` in `theme.ts` (the `useState` seed in settings-context when no `theme` setting is saved). New installs / users who never picked a theme now get Violet; anyone who explicitly chose a theme keeps it. FEATURES.md theme line updated.
+- **Screenshots**: added `live-workout.jpg` (active logging — rest timer, green completed sets, KG/REPS inputs; the "matches Strong" shot the gallery lacked) and replaced `recent-prs.jpg` with the erectors-corrected version (owner fixed a stale "lower back" record on-device). README gallery reworked to a Trendline hero + 3×2 grid (7 shots).
+
 ## 2026-07-24 — README screenshots
 
 Owner supplied 6 real-data screenshots (Violet theme) → renamed from WhatsApp filenames to descriptive slugs in `screenshots/` (trendline, muscle-heatmap-sets, exercise-detail, recent-prs, muscle-heatmap-tonnage, workout-detail) and added a captioned 3×2 HTML-table gallery to the README after the "Why it exists" pitch. Pre-release polish before announcing.
