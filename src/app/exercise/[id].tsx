@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 
 import { Text } from '@/components/text';
@@ -106,7 +106,16 @@ export default function ExerciseDetail() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: Spacing.three, paddingBottom: Spacing.six }}>
-      <Stack.Screen options={{ title: exercise?.name ?? 'Exercise' }} />
+      <Stack.Screen options={{
+        title: exercise?.name ?? 'Exercise',
+        headerRight: exercise?.is_custom
+          ? () => (
+              <Pressable onPress={() => router.push(`/exercise/edit/${id}`)} hitSlop={12}>
+                <Text style={{ color: colors.tint, fontSize: 16, fontWeight: '600' }}>Edit</Text>
+              </Pressable>
+            )
+          : undefined,
+      }} />
 
       <View style={{ flexDirection: 'row', gap: Spacing.two }}>
         <Stat label={`Best ${unit}`} value={bestWeight != null ? fmt(bestWeight) : '—'} />
