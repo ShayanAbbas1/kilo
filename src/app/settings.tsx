@@ -6,10 +6,12 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 
 import { Text } from '@/components/text';
 import { Button, Card, SectionTitle } from '@/components/ui';
-import { Spacing, ThemeMode, ThemeName, Themes } from '@/constants/theme';
+import { Spacing, Type, ThemeMode, ThemeName, Themes } from '@/constants/theme';
 import { useResolvedScheme, useTheme } from '@/hooks/use-theme';
 import { exportAll, getSetting, importAll, setSetting } from '@/db/queries';
 import { useSettings } from '@/lib/settings-context';
@@ -30,6 +32,15 @@ export default function SettingsScreen() {
   const [goalWeightText, setGoalWeightText] = useState(
     goalWeightKg != null ? formatWeight(goalWeightKg, unit) : '');
   const [busy, setBusy] = useState(false);
+
+  const appVersion = Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '?';
+  let updateId: string | null = null;
+  try {
+    updateId = Updates.updateId ?? null;
+  } catch {
+    // ponytail: Updates.updateId throws when updates aren't configured (Expo Go, dev client)
+  }
+  const versionStamp = `${appVersion} (${updateId ? updateId.slice(0, 7) : 'bundled'})`;
 
   useEffect(() => {
     getSetting(db, 'rest_seconds').then((v) => setRestText(v ?? ''));
@@ -234,6 +245,9 @@ export default function SettingsScreen() {
         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
           Kilo — free forever, local-first. No accounts, no servers.
         </Text>
+      </View>
+      <View style={{ marginTop: Spacing.two, alignItems: 'center' }}>
+        <Text style={[Type.caption, { color: colors.textSecondary }]}>{versionStamp}</Text>
       </View>
     </ScrollView>
   );

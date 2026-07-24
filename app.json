@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.shayanabbas.kilo"
+      "package": "com.shayanabbas.kilo",
+      "versionCode": 1
     },
     "web": {
       "output": "static",
