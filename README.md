@@ -30,6 +30,21 @@ Day-to-day improvements still arrive over the air on app restart; Obtainium only
 
 [FEATURES.md](FEATURES.md) is the spec of record — what's shipped, what's next, and explicit non-goals.
 
+## 📸 Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="screenshots/trendline.jpg" width="240" alt="The Trendline"><br><sub><b>The Trendline</b><br>weight · tonnage · calories, one chart</sub></td>
+    <td align="center" width="33%"><img src="screenshots/muscle-heatmap-sets.jpg" width="240" alt="Muscle heatmap (sets)"><br><sub><b>Sets per muscle</b><br>anatomical heatmap</sub></td>
+    <td align="center" width="33%"><img src="screenshots/exercise-detail.jpg" width="240" alt="Exercise detail"><br><sub><b>Per-exercise</b><br>progression & muscle targets</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="33%"><img src="screenshots/recent-prs.jpg" width="240" alt="Tonnage & PRs"><br><sub><b>Tonnage per muscle</b><br>+ recent PRs</sub></td>
+    <td align="center" width="33%"><img src="screenshots/muscle-heatmap-tonnage.jpg" width="240" alt="Muscle heatmap (tonnage)"><br><sub><b>Same heatmap</b><br>toggled to tonnage</sub></td>
+    <td align="center" width="33%"><img src="screenshots/workout-detail.jpg" width="240" alt="Workout report"><br><sub><b>Workout report</b><br>every set, logged</sub></td>
+  </tr>
+</table>
+
 ## Stack
 
 - [Expo](https://expo.dev) / React Native, TypeScript, expo-router

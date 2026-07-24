@@ -2,6 +2,10 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-24 — README screenshots
+
+Owner supplied 6 real-data screenshots (Violet theme) → renamed from WhatsApp filenames to descriptive slugs in `screenshots/` (trendline, muscle-heatmap-sets, exercise-detail, recent-prs, muscle-heatmap-tonnage, workout-detail) and added a captioned 3×2 HTML-table gallery to the README after the "Why it exists" pitch. Pre-release polish before announcing.
+
 ## 2026-07-24 — Obtainium install path (README)
 
 Documented Obtainium as the recommended install: README "Get the app" gained an "Auto-updating install" subsection — install Obtainium, add `https://github.com/ShayanAbbas1/kilo`, get auto-updates from GitHub Releases. Included the one-tap `obtainium://add/<url>` deeplink (verified the scheme/format against Obtainium's source — `AndroidManifest.xml` registers `obtainium://`, `DEVELOPER_GUIDE.md` confirms `obtainium://add/<url>`; not `app`). No dev-side setup exists for Obtainium — it's a client that watches releases — so this is docs-only. Next FOSS step: IzzyOnDroid submission.
