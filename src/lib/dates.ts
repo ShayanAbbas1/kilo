@@ -29,6 +29,20 @@ export function formatDateTime(iso: string): string {
     ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+/** Timed-set input: "90" and "1:30" both mean 90 seconds. null on anything else. */
+export function parseDuration(text: string): number | null {
+  const parts = text.trim().split(':');
+  if (parts.length > 2 || parts.some((p) => !/^\d+$/.test(p))) return null;
+  const n = parts.map(Number);
+  return n.length === 2 ? n[0] * 60 + n[1] : n[0];
+}
+
+/** 90 -> "1:30" */
+export function formatDuration(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export function durationLabel(startIso: string, endIso: string): string {
   const mins = Math.max(1, Math.round((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000));
   if (mins < 60) return `${mins}m`;

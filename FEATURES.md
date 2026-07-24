@@ -10,6 +10,7 @@ The bar for done: the owner logs a full real gym session, a weigh-in, and a day 
 - [x] Exercise library seeded from free-exercise-db (873 exercises with muscle groups, instructions)
 - [x] Custom exercises (name + muscle group + equipment) — editable after creation via an "Edit" action on the exercise page (`/exercise/edit/[id]`, custom exercises only)
 - [x] Start empty workout → add exercises → log sets (weight × reps)
+- [x] Bodyweight and timed exercises: a bodyweight exercise logs *added* load (`+kg`, blank = +0) and snapshots your latest weigh-in into tonnage; a timed one logs `90`/`1:30` durations instead of reps — two independent per-exercise toggles (seeded, user-overridable on any exercise)
 - [x] Previous-session values shown per set (the "what did I do last time" ghost text)
 - [x] Set types: warm-up / working / failure (tap the set number to cycle)
 - [x] Rest timer — wall-clock in-app countdown after each completed set (survives backgrounding), +15s/skip, duration in settings; high-importance heads-up notification with vibration when rest ends while app is backgrounded/locked, suppressed while app is on screen (build-only — expo-notifications no-ops in Expo Go on Android)

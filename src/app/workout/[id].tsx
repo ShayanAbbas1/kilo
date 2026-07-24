@@ -12,10 +12,11 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
   PrevSet, SetType, WorkoutExerciseDetail,
-  addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWorkout,
+  addSet, deleteSet, discardWorkout, finishWorkout, getSetting, getWeightTrend, getWorkout,
   getWorkoutExercises, removeWorkoutExercise, setExerciseNotes, setSupersetWithNext,
   setWorkoutNotes, updateSet,
 } from '@/db/queries';
+import { formatDuration, parseDuration } from '@/lib/dates';
 import { cancelRestDone, scheduleRestDone } from '@/lib/rest-notification';
 import { useSettings } from '@/lib/settings-context';
 import { formatWeight, fromDisplayWeight, weightLabel } from '@/lib/units';
@@ -26,6 +27,7 @@ type VMSet = {
   completed: boolean;
   weightText: string;
   repsText: string;
+  durationText: string;
   rpeText: string;
   pr?: boolean;
 };
@@ -36,6 +38,8 @@ type VMExercise = {
   name: string;
   notes: string;
   supersetWithNext: boolean; // linked to the next exercise (superset)
+  isBodyweight: boolean; // weight column holds *added* load, labelled +kg
+  isTimed: boolean; // duration input in place of reps
   prev: PrevSet[];
   bestWeight: number | null;
   sets: VMSet[];
@@ -52,6 +56,8 @@ export default function ActiveWorkoutScreen() {
   const [restSec, setRestSec] = useState(120);
   const [elapsedMin, setElapsedMin] = useState<number | null>(null);
   const [startedAt, setStartedAt] = useState<string | null>(null);
+  // assumed true until the query answers, so the prompt never flashes on a normal install
+  const [hasWeighIn, setHasWeighIn] = useState(true);
 
   const [notes, setNotes] = useState('');
   // which weight input is focused — drives the plate-increment bar above the keyboard
@@ -131,6 +137,8 @@ export default function ActiveWorkoutScreen() {
         name: r.name,
         notes: r.notes ?? '',
         supersetWithNext: !!r.superset_with_next,
+        isBodyweight: !!r.is_bodyweight,
+        isTimed: !!r.is_timed,
         prev: r.prev,
         bestWeight: r.best_weight,
         sets: r.sets.map((s) => ({
@@ -139,6 +147,7 @@ export default function ActiveWorkoutScreen() {
           completed: !!s.completed,
           weightText: s.weight_kg == null ? '' : formatWeight(s.weight_kg, unit),
           repsText: s.reps == null ? '' : String(s.reps),
+          durationText: s.duration_seconds == null ? '' : formatDuration(s.duration_seconds),
           rpeText: s.rpe == null ? '' : String(s.rpe),
         })),
       })),
@@ -147,6 +156,9 @@ export default function ActiveWorkoutScreen() {
 
   const reload = useCallback(() => {
     getWorkoutExercises(db, id).then((rows) => setExercises(toVM(rows)));
+    // one query per screen load, not per bodyweight row; re-runs on focus so the
+    // prompt disappears after a weigh-in without a manual refresh
+    getWeightTrend(db, 1).then((rows) => setHasWeighIn(rows.length > 0));
   }, [db, id, toVM]);
 
   useFocusEffect(reload);
@@ -171,6 +183,11 @@ export default function ActiveWorkoutScreen() {
     patchSet(weId, setId, { repsText: text });
     const n = parseInt(text, 10);
     updateSet(db, setId, { reps: isNaN(n) ? null : n });
+  };
+
+  const onDurationChange = (weId: string, setId: string, text: string) => {
+    patchSet(weId, setId, { durationText: text });
+    updateSet(db, setId, { duration_seconds: parseDuration(text) });
   };
 
   const onRpeChange = (weId: string, setId: string, text: string) => {
@@ -198,7 +215,7 @@ export default function ActiveWorkoutScreen() {
     if (!s.completed) {
       // adopt ghost values if user typed nothing (Strong behavior)
       const ghost = ex.prev[idx];
-      let { weightText, repsText } = s;
+      let { weightText, repsText, durationText } = s;
       if (!weightText && ghost?.weight_kg != null) {
         weightText = formatWeight(ghost.weight_kg, unit);
         updateSet(db, s.id, { weight_kg: ghost.weight_kg });
@@ -207,12 +224,16 @@ export default function ActiveWorkoutScreen() {
         repsText = String(ghost.reps);
         updateSet(db, s.id, { reps: ghost.reps });
       }
+      if (ex.isTimed && !durationText && ghost?.duration_seconds != null) {
+        durationText = formatDuration(ghost.duration_seconds);
+        updateSet(db, s.id, { duration_seconds: ghost.duration_seconds });
+      }
       // PR check: beat the all-time best working weight for this exercise
       const kgNow = fromDisplayWeight(parseFloat(weightText.replace(',', '.')), unit);
       const isPr =
         s.set_type !== 'warmup' &&
         ex.bestWeight != null && !isNaN(kgNow) && kgNow > ex.bestWeight;
-      patchSet(ex.weId, s.id, { completed: true, weightText, repsText, pr: isPr });
+      patchSet(ex.weId, s.id, { completed: true, weightText, repsText, durationText, pr: isPr });
       // raise the in-memory best so a later set in the same session doesn't re-fire the 🏆
       if (isPr) patchExercise(ex.weId, { bestWeight: kgNow });
       updateSet(db, s.id, { completed: true });
@@ -316,6 +337,18 @@ export default function ActiveWorkoutScreen() {
     return String(n);
   };
 
+  // previous session, as "80 kg × 8" — either half can be missing: a pure bodyweight set
+  // has no added weight, a timed set has a duration where its reps would be
+  const prevLabel = (ex: VMExercise, ghost: PrevSet | undefined): string => {
+    if (!ghost) return '—';
+    const effort = ex.isTimed
+      ? (ghost.duration_seconds != null ? formatDuration(ghost.duration_seconds) : null)
+      : (ghost.reps != null ? String(ghost.reps) : null);
+    const load = ghost.weight_kg != null ? weightLabel(ghost.weight_kg, unit) : null;
+    if (load && effort) return `${load} × ${effort}`;
+    return load ?? effort ?? '—';
+  };
+
   const completedCount = exercises.flatMap((e) => e.sets).filter((s) => s.completed).length;
 
   return (
@@ -407,11 +440,24 @@ export default function ActiveWorkoutScreen() {
                 </Pressable>
               </View>
             </View>
+            {ex.isBodyweight && !hasWeighIn && (
+              <Pressable
+                onPress={() => router.push('/body')}
+                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: colors.tint, fontSize: 13 }}>
+                  Add your body weight to track volume →
+                </Text>
+              </Pressable>
+            )}
             <View style={styles.headerRow}>
               <Text style={[styles.colSet, styles.colHead, { color: colors.textSecondary }]}>SET</Text>
               <Text style={[styles.colPrev, styles.colHead, { color: colors.textSecondary }]}>PREVIOUS</Text>
-              <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>{unit.toUpperCase()}</Text>
-              <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>REPS</Text>
+              <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>
+                {ex.isBodyweight ? '+' : ''}{unit.toUpperCase()}
+              </Text>
+              <Text style={[styles.colInput, styles.colHead, { color: colors.textSecondary }]}>
+                {ex.isTimed ? 'TIME' : 'REPS'}
+              </Text>
               {showRpe && (
                 <Text style={[styles.colRpe, styles.colHead, { color: colors.textSecondary }]}>RPE</Text>
               )}
@@ -445,9 +491,7 @@ export default function ActiveWorkoutScreen() {
                     <Text
                       style={[styles.colPrev, { color: colors.textSecondary, fontVariant: ['tabular-nums'] }]}
                       numberOfLines={1}>
-                      {ghost && ghost.weight_kg != null
-                        ? `${weightLabel(ghost.weight_kg, unit)} × ${ghost.reps ?? '—'}`
-                        : '—'}
+                      {prevLabel(ex, ghost)}
                     </Text>
                     <TextInput
                       style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
@@ -460,15 +504,28 @@ export default function ActiveWorkoutScreen() {
                       placeholderTextColor={colors.textSecondary}
                       selectTextOnFocus
                     />
-                    <TextInput
-                      style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-                      value={s.repsText}
-                      onChangeText={(t) => onRepsChange(ex.weId, s.id, t)}
-                      keyboardType="number-pad"
-                      placeholder={ghost?.reps != null ? String(ghost.reps) : ''}
-                      placeholderTextColor={colors.textSecondary}
-                      selectTextOnFocus
-                    />
+                    {ex.isTimed ? (
+                      <TextInput
+                        style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+                        value={s.durationText}
+                        onChangeText={(t) => onDurationChange(ex.weId, s.id, t)}
+                        // seconds or m:ss — a number pad has no colon, so this needs the full keyboard
+                        keyboardType="numbers-and-punctuation"
+                        placeholder={ghost?.duration_seconds != null ? formatDuration(ghost.duration_seconds) : '0:00'}
+                        placeholderTextColor={colors.textSecondary}
+                        selectTextOnFocus
+                      />
+                    ) : (
+                      <TextInput
+                        style={[styles.colInput, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+                        value={s.repsText}
+                        onChangeText={(t) => onRepsChange(ex.weId, s.id, t)}
+                        keyboardType="number-pad"
+                        placeholder={ghost?.reps != null ? String(ghost.reps) : ''}
+                        placeholderTextColor={colors.textSecondary}
+                        selectTextOnFocus
+                      />
+                    )}
                     {showRpe && (
                       <TextInput
                         style={[styles.colRpe, styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}

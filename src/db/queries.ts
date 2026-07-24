@@ -6,6 +6,7 @@ import { E1rmPoint, detectPlateau, stallContext } from '../lib/plateau';
 import {
   SCHEMA_VERSION,
   BEST_WEIGHT_SQL,
+  BODYWEIGHT_SNAPSHOT_SQL,
   CALORIE_DAYS_SQL,
   EXERCISE_PROGRESSION_SQL,
   STALL_CANDIDATES_SQL,
@@ -39,6 +40,8 @@ export type Exercise = {
   secondary_muscles: string;
   instructions: string;
   is_custom: number;
+  is_bodyweight: number; // weight_kg holds *added* load; effective load adds bodyweight_kg
+  is_timed: number; // logged as duration_seconds instead of reps
 };
 
 export type SetType = 'warmup' | 'working' | 'failure';
@@ -52,6 +55,8 @@ export type WorkoutSet = {
   set_type: SetType;
   completed: number;
   rpe: number | null;
+  duration_seconds: number | null;
+  bodyweight_kg: number | null;
 };
 
 export type WorkoutExerciseDetail = {
@@ -61,6 +66,8 @@ export type WorkoutExerciseDetail = {
   position: number;
   notes: string | null;
   superset_with_next: number; // 1 = linked to the next exercise by position (superset)
+  is_bodyweight: number;
+  is_timed: number;
   sets: WorkoutSet[];
   prev: PrevSet[];
   best_weight: number | null;
@@ -79,6 +86,7 @@ export type PrevSet = {
   weight_kg: number | null;
   reps: number | null;
   set_type: SetType;
+  duration_seconds: number | null;
 };
 
 export type HistoryRow = {
@@ -140,13 +148,25 @@ export async function getExercise(db: SQLiteDatabase, id: string): Promise<Exerc
 
 export async function createCustomExercise(
   db: SQLiteDatabase, name: string, primaryMuscle: string, equipment: string,
+  isBodyweight = false, isTimed = false,
 ): Promise<string> {
   const id = newId();
   await db.runAsync(
-    `INSERT INTO exercises (id, name, category, equipment, primary_muscles, is_custom)
-     VALUES (?, ?, 'strength', ?, ?, 1)`,
-    id, name.trim(), equipment, JSON.stringify([primaryMuscle]));
+    `INSERT INTO exercises (id, name, category, equipment, primary_muscles, is_custom,
+       is_bodyweight, is_timed)
+     VALUES (?, ?, 'strength', ?, ?, 1, ?, ?)`,
+    id, name.trim(), equipment, JSON.stringify([primaryMuscle]),
+    isBodyweight ? 1 : 0, isTimed ? 1 : 0);
   return id;
+}
+
+/** Both v5 flags are user-overridable on any exercise, seeded or custom. */
+export async function setExerciseFlags(
+  db: SQLiteDatabase, id: string, isBodyweight: boolean, isTimed: boolean,
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE exercises SET is_bodyweight = ?, is_timed = ? WHERE id = ?',
+    isBodyweight ? 1 : 0, isTimed ? 1 : 0, id);
 }
 
 /** Edit a user-created exercise. The is_custom guard makes it a no-op on seed exercises. */
@@ -182,9 +202,10 @@ export async function getWorkoutExercises(
 ): Promise<WorkoutExerciseDetail[]> {
   const rows = await db.getAllAsync<
     { id: string; exercise_id: string; name: string; position: number; notes: string | null;
-      superset_with_next: number }
+      superset_with_next: number; is_bodyweight: number; is_timed: number }
   >(
-    `SELECT we.id, we.exercise_id, we.position, we.notes, we.superset_with_next, e.name
+    `SELECT we.id, we.exercise_id, we.position, we.notes, we.superset_with_next,
+       e.name, e.is_bodyweight, e.is_timed
      FROM workout_exercises we JOIN exercises e ON e.id = we.exercise_id
      WHERE we.workout_id = ? ORDER BY we.position`, workoutId);
   const result: WorkoutExerciseDetail[] = [];
@@ -260,7 +281,7 @@ export async function updateSet(
   db: SQLiteDatabase, setId: string,
   fields: {
     weight_kg?: number | null; reps?: number | null; set_type?: SetType; completed?: boolean;
-    rpe?: number | null;
+    rpe?: number | null; duration_seconds?: number | null;
   },
 ): Promise<void> {
   const cols: string[] = [];
@@ -268,10 +289,16 @@ export async function updateSet(
   if ('weight_kg' in fields) { cols.push('weight_kg = ?'); vals.push(fields.weight_kg ?? null); }
   if ('reps' in fields) { cols.push('reps = ?'); vals.push(fields.reps ?? null); }
   if ('rpe' in fields) { cols.push('rpe = ?'); vals.push(fields.rpe ?? null); }
+  if ('duration_seconds' in fields) {
+    cols.push('duration_seconds = ?'); vals.push(fields.duration_seconds ?? null);
+  }
   if (fields.set_type) { cols.push('set_type = ?'); vals.push(fields.set_type); }
   if ('completed' in fields) {
     cols.push('completed = ?', 'completed_at = ?');
     vals.push(fields.completed ? 1 : 0, fields.completed ? nowIso() : null);
+    // Snapshot body weight here rather than in the caller: every path that completes a
+    // set goes through this one, and the value must be the weight *at that moment*.
+    if (fields.completed) cols.push(BODYWEIGHT_SNAPSHOT_SQL);
   }
   if (!cols.length) return;
   await db.runAsync(`UPDATE sets SET ${cols.join(', ')} WHERE id = ?`, ...vals, setId);

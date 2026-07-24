@@ -11,7 +11,7 @@ import {
   Workout, WorkoutExerciseDetail, createRoutineFromWorkout, deleteWorkout,
   getActiveWorkout, getWorkout, getWorkoutExercises, reopenWorkout,
 } from '@/db/queries';
-import { durationLabel, formatDateTime } from '@/lib/dates';
+import { durationLabel, formatDateTime, formatDuration } from '@/lib/dates';
 import { useSettings } from '@/lib/settings-context';
 import { weightLabel } from '@/lib/units';
 
@@ -45,9 +45,10 @@ export default function WorkoutDetail() {
   };
 
   const totalSets = exercises.reduce((n, ex) => n + ex.sets.length, 0);
+  // mirrors LOAD_KG in sql.ts: a bodyweight set's load is its snapshot plus any added weight
   const volumeKg = exercises.reduce(
     (sum, ex) => sum + ex.sets.reduce(
-      (s, set) => s + (set.weight_kg != null && set.reps != null ? set.weight_kg * set.reps : 0), 0), 0);
+      (s, set) => s + ((set.bodyweight_kg ?? 0) + (set.weight_kg ?? 0)) * (set.reps ?? 0), 0), 0);
   const summary = workout && [
     { label: 'Duration', value: workout.finished_at ? durationLabel(workout.started_at, workout.finished_at) : '—' },
     { label: 'Sets', value: String(totalSets) },
@@ -165,7 +166,11 @@ export default function WorkoutDetail() {
                   {s.set_type === 'warmup' ? 'W' : s.set_type === 'failure' ? 'F' : idx + 1}
                 </Text>
                 <Text style={{ color: colors.text, fontVariant: ['tabular-nums'] }}>
-                  {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'} × {s.reps ?? '—'}
+                  {s.weight_kg != null ? weightLabel(s.weight_kg, unit) : '—'}
+                  {' × '}
+                  {ex.is_timed
+                    ? (s.duration_seconds != null ? formatDuration(s.duration_seconds) : '—')
+                    : (s.reps ?? '—')}
                   {s.rpe != null ? ` @ ${s.rpe}` : ''}
                 </Text>
               </View>

@@ -33,6 +33,8 @@ export default function ExercisePicker() {
   const [creating, setCreating] = useState(false);
   const [newMuscle, setNewMuscle] = useState(MUSCLES[0]);
   const [newEquipment, setNewEquipment] = useState(EQUIPMENT[0]);
+  const [newBodyweight, setNewBodyweight] = useState(false);
+  const [newTimed, setNewTimed] = useState(false);
 
   useEffect(() => {
     getRecentExercises(db).then(setRecent);
@@ -51,7 +53,7 @@ export default function ExercisePicker() {
   const createAndPick = async () => {
     const name = query.trim();
     if (!name) return;
-    const id = await createCustomExercise(db, name, newMuscle, newEquipment);
+    const id = await createCustomExercise(db, name, newMuscle, newEquipment, newBodyweight, newTimed);
     await pick(id);
   };
 
@@ -135,6 +137,15 @@ export default function ExercisePicker() {
             {EQUIPMENT.map((eq) => (
               <Chip key={eq} label={eq} selected={eq === newEquipment} onPress={() => setNewEquipment(eq)} />
             ))}
+          </View>
+          <Text style={{ color: colors.textSecondary }}>Logs as</Text>
+          <View style={styles.chips}>
+            <Chip
+              label="Bodyweight"
+              selected={newBodyweight}
+              onPress={() => setNewBodyweight(!newBodyweight)}
+            />
+            <Chip label="Timed" selected={newTimed} onPress={() => setNewTimed(!newTimed)} />
           </View>
           <Button title="Create & Add" onPress={createAndPick} />
         </View>
