@@ -38,9 +38,10 @@ const RULES: Record<string, Rule[]> = {
     { test: /row/, emphasis: 'lats — thickness (lower lat) emphasis' },
     { test: /./, emphasis: 'lats' },
   ],
-  'middle back': [
+  traps: [
+    { test: /shrug/, emphasis: 'upper traps' },
     { test: /row|face pull|rear/, emphasis: 'rhomboids & mid-traps (thickness)' },
-    { test: /./, emphasis: 'mid-back' },
+    { test: /./, emphasis: 'traps' },
   ],
   hamstrings: [
     { test: /romanian|rdl|stiff|good morning|deadlift/, emphasis: 'hip-hinge — long head & semis' },
@@ -61,10 +62,6 @@ const RULES: Record<string, Rule[]> = {
     { test: /thrust|bridge/, emphasis: 'glute max — hip extension' },
     { test: /abduction|clam/, emphasis: 'glute med/min — abduction' },
     { test: /./, emphasis: 'glutes' },
-  ],
-  traps: [
-    { test: /shrug/, emphasis: 'upper traps' },
-    { test: /./, emphasis: 'traps' },
   ],
 };
 

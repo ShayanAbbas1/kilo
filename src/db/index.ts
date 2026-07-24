@@ -19,6 +19,11 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
   if (oldVersion < 3) await db.execAsync(MIGRATION_V3_SQL);
 
   await db.execAsync(SCHEMA_SQL);
+
+  // v3 -> v4: corrected muscle taxonomy (dropped "middle back", "lower back" -> "erectors",
+  // + scientific remap). Re-apply muscle columns to stock rows from the corrected seed;
+  // custom exercises (is_custom = 1) and all workout history keep their own values.
+  if (oldVersion < 4) await backfillMuscles(db);
   await db.runAsync(
     'INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)',
     'schema_version',
@@ -28,6 +33,26 @@ export async function migrate(db: SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM exercises');
   if (row && row.n === 0) {
     await seed(db);
+  }
+}
+
+async function backfillMuscles(db: SQLiteDatabase): Promise<void> {
+  const stmt = await db.prepareAsync(
+    `UPDATE exercises SET primary_muscles = ?, secondary_muscles = ?
+     WHERE id = ? AND is_custom = 0`,
+  );
+  try {
+    await db.withTransactionAsync(async () => {
+      for (const e of seedExercises) {
+        await stmt.executeAsync(
+          JSON.stringify(e.primaryMuscles),
+          JSON.stringify(e.secondaryMuscles),
+          e.id,
+        );
+      }
+    });
+  } finally {
+    await stmt.finalizeAsync();
   }
 }
 

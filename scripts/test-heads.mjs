@@ -16,7 +16,9 @@ assert.equal(one('Triceps Pushdown', ['triceps']), 'lateral head emphasis');
 assert.equal(one('Side Lateral Raise', ['shoulders']), 'side (lateral) delt');
 assert.equal(one('Face Pull', ['shoulders']), 'rear (posterior) delt');
 assert.equal(one('Wide-Grip Lat Pulldown', ['lats']), 'lats — width (upper lat) emphasis');
-assert.equal(one('Bent Over Barbell Row', ['middle back']), 'rhomboids & mid-traps (thickness)');
+assert.equal(one('Bent Over Barbell Row', ['lats']), 'lats — thickness (lower lat) emphasis');
+assert.equal(one('Bent Over Barbell Row', ['traps']), 'rhomboids & mid-traps (thickness)');
+assert.equal(one('Barbell Shrug', ['traps']), 'upper traps');
 assert.equal(one('Romanian Deadlift', ['hamstrings']), 'hip-hinge — long head & semis');
 assert.equal(one('Seated Leg Curl', ['hamstrings']), 'knee-flexion — all heads incl. short head');
 assert.equal(one('Seated Calf Raise', ['calves']), 'soleus (bent-knee)');
@@ -27,10 +29,9 @@ assert.equal(
   muscleEmphasis('Close-Grip Barbell Bench Press', ['triceps', 'chest']).length, 2,
   'multi-muscle exercises get one emphasis per known muscle');
 
-// body-map aggregation: lats + middle back merge into upper-back, intensity scales to max
+// body-map aggregation: intensity scales to the busiest slug
 const data = toBodyData([
-  { muscle: 'lats', sets: 6 },
-  { muscle: 'middle back', sets: 6 },
+  { muscle: 'lats', sets: 12 },
   { muscle: 'chest', sets: 3 },
 ]);
 const upperBack = data.find((d) => d.slug === 'upper-back');
@@ -38,6 +39,12 @@ const chest = data.find((d) => d.slug === 'chest');
 assert.equal(upperBack.intensity, HEAT_COLORS.length, 'busiest muscle hits top of ramp');
 assert.equal(chest.intensity, Math.ceil((3 / 12) * HEAT_COLORS.length));
 assert.ok(Object.values(MUSCLE_TO_SLUG).every((s) => typeof s === 'string'));
+
+// muscles sharing a slug merge (glutes + abductors -> gluteal)
+const merged = toBodyData([{ muscle: 'glutes', sets: 4 }, { muscle: 'abductors', sets: 4 }]);
+assert.equal(
+  merged.find((d) => d.slug === 'gluteal').intensity, HEAT_COLORS.length,
+  'glutes + abductors merge into gluteal');
 
 // aggregateHeads: per-exercise weekly rows -> totals per head/region
 const calfRows = [

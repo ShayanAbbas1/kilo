@@ -15,7 +15,7 @@ import {
 } from '@/db/queries';
 
 export const MUSCLES = [
-  'chest', 'lats', 'middle back', 'lower back', 'shoulders', 'traps',
+  'chest', 'lats', 'traps', 'erectors', 'shoulders',
   'biceps', 'triceps', 'forearms', 'quadriceps', 'hamstrings', 'glutes',
   'calves', 'abdominals', 'abductors', 'adductors', 'neck',
 ];
