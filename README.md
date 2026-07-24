@@ -15,6 +15,8 @@ Built by a lifter who lost 40+ kg tracking all of this manually across paywalled
 - **Free forever, no paywall.** No backend, no accounts, no sync servers. All data lives on-device in SQLite; export/import as JSON means your data is always yours.
 - **Logging that matches Strong.** Start workout → add exercises → log sets with last session's values as ghost text → rest timer. Routines, supersets, RPE, plate calculator. Switching? Import your Strong or Hevy history from their CSV exports — your analytics light up on day one.
 - **Analytics no free app has.** Per-exercise progression (est. 1RM / top weight / volume), sets and tonnage per muscle group with an anatomical body heatmap down to muscle-head granularity, PR feed, and **the Trendline** — body weight, weekly tonnage, and calories on one chart.
+- **Science-based exercise data.** The ~800 seeded exercises have their muscle mappings audited for anatomical accuracy — real muscles (lats, traps, erectors), not the vague region labels ("middle back", "lower back") the source dataset shipped with. So "sets per muscle group" actually reflects what you trained.
+- **No barcode scanning or auto calorie logging.** Portion size, prep, brand variance, and database inaccuracy make "scan and forget" quietly wrong — it wrecks the numbers you're trying to trust. Kilo keeps calories manual: a few taps, honest about what you actually ate.
 
 [FEATURES.md](FEATURES.md) is the spec of record — what's shipped, what's next, and explicit non-goals.
 
