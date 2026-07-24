@@ -54,5 +54,3 @@ npm install
 npm start          # scan the QR with Expo Go on Android
 npm run android    # or launch the emulator
 ```
-
-Note: the rest-timer background notification needs a dev build — expo-notifications no-ops in Expo Go on Android.
