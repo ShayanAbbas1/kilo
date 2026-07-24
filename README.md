@@ -6,7 +6,7 @@ Built by a lifter who lost 40+ kg tracking all of this manually across paywalled
 
 ## 📲 Get the app
 
-**[Download the Android APK](https://expo.dev/artifacts/eas/Noxx-UTdcX6vJvbWMR7uC2LvL7EIQRFM5qYEaStv7lc.apk)** — install it once and it keeps itself current: the app pulls updates over the air on restart. Play Store release is planned; until then this is the official way to get Kilo.
+**[Download the latest Android APK](https://github.com/ShayanAbbas1/kilo/releases/latest)** — grab the `.apk` from the latest release, install it once, and it keeps itself current: the app pulls updates over the air on restart. Play Store release is planned; until then this is the official way to get Kilo.
 
 > Installing over an existing Kilo keeps your data. Don't uninstall first — all data lives on-device.
 
@@ -40,4 +40,4 @@ Note: the rest-timer background notification needs a dev build — expo-notifica
 
 All builds: https://expo.dev/accounts/shayanabbas/projects/kilo/builds
 
-JS-only changes ship over the air on merge to `main` (no new APK). A new APK is only cut for native changes — when that happens, the download link above gets updated in the same PR.
+JS-only changes ship over the air on merge to `main` (no new APK). A new APK is only cut for native changes — when that happens, publish a new GitHub Release with the APK attached; the download link above (`/releases/latest`) always resolves to it, no README edit needed.

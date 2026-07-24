@@ -2,6 +2,16 @@
 
 Handoff log: newest entry first. Read AGENTS.md (project brief) and FEATURES.md (spec of record) first.
 
+## 2026-07-24 — Public distribution: GitHub Releases + v1.0.0
+
+Owner wants to start distributing on open-source platforms. First move: make GitHub Releases the canonical APK home instead of the ephemeral `expo.dev/artifacts/...` URL (which changed every native build and forced a README edit each time — that chore is now gone).
+
+- **README** "Get the app" now links to `https://github.com/ShayanAbbas1/kilo/releases/latest` — a permanent, version-agnostic page. Never hand-edited again; new releases just attach a new APK.
+- **`v1.0.0` GitHub Release** cut with the current preview APK (110 MB, pulled from the last EAS artifact) attached.
+- **OTA unchanged** — expo-updates/EAS free tier stays as-is. Clarified the model in AGENTS.md: OTA is the fast lane for JS between releases; a new GitHub Release is how native changes reach users; both live at once. Walked back an earlier idea to disable OTA for a store variant — only F-Droid *main* needs that, and it's deferred (builds from source, RN/Expo reproducible builds are painful, OTA conflicts with their model).
+- **FOSS-store pathway** (documented, not yet executed): GitHub Releases → Obtainium + IzzyOnDroid (both read from releases; IzzyOnDroid only earns a cosmetic `NonFreeNet` label for OTA, still accepted) → announce (Show HN, r/fossdroid, r/fitness). Play Store optional/later.
+- No code touched — README/AGENTS.md/FEATURES.md/WORKLOG.md only. FEATURES.md Phase 3 gained the distribution line.
+
 ## 2026-07-18 — Cold-start Workout tab (same PR)
 
 Owner has no routines → empty home screen felt dead. Strong-style fix, opus subagent build: with no routines the tab lists the last 3 finished workouts ("Start from a recent workout" — `startWorkoutFromPast` copies exercises in position order, target sets = non-warmup count, supersets preserved, via extracted `WORKOUT_COPY_EXERCISES_SQL` now shared with `createRoutineFromWorkout`); with no history either, three template cards (Upper/Lower/Full Body) whose exercise names are verbatim seed names (verified against `src/data/exercises.json` — there is no plain "Bench Press"/"Deadlift" in free-exercise-db; it's "Barbell Bench Press - Medium Grip" etc.), resolved to ids at tap time via `resolveExerciseIdsByName` (SQL `IN` doesn't preserve order — JS reorders, unresolved skipped) → `startWorkoutFromExercises(ids, 3)`. All start paths share the active-workout guard. New test-db assertions cover copy-from-past ordering/target-sets/superset + name resolution.
